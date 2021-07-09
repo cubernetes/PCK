@@ -49,7 +49,7 @@ SETLOCAL
 				GOTO :Error
 			)
 			CALL :ColorEcho INFO def "Showing all available packages that match the regex `!Arg2!`." 1 1
-			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!"  ^| !Findstr! /I /R "^^[!AlnumCharClass!]*!Arg2![!AlnumCharClass!]*;" ^| !Sort!') DO @(
+			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!"  ^| "!Findstr!" /I /R "^^[!AlnumCharClass!]*!Arg2![!AlnumCharClass!]*;" ^| "!Sort!"') DO @(
 				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
 					ECHO - %%~A
 				) ELSE (
@@ -58,7 +58,7 @@ SETLOCAL
 			)
 		) ELSE (
 			CALL :ColorEcho INFO def "Showing all available packages." 1 1
-			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| !Sort!') DO (
+			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
 				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
 					ECHO - %%~A
 				) ELSE (
@@ -102,7 +102,7 @@ SETLOCAL
 
 	CALL :WarnAboutIgnoredArgs 1 %*
 	REM --------------------------- Install package ---------------------------
-	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| !Sort!') DO (
+	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
 
 		IF "%%~A"=="!Arg1!" (
 
@@ -247,11 +247,11 @@ REM ------------------------ Init ------------------------
 	CALL :GetProgramPath certutil "!System32!" Certutil
 	CALL :GetProgramPath cscript "!System32!" Cscript
 
-	FOR /F "TOKENS=3 DELIMS=. " %%A IN ('^"!Chcp!^"') DO (SET "OldCodePage=%%A")
+	FOR /F "TOKENS=3 DELIMS=. " %%A IN ('^""!Chcp!"^"') DO (SET "OldCodePage=%%A")
 
-	1>NUL CHCP 1252
+	1>NUL "!Chcp!" 1252
 	CALL :GetProgramPath powershell "!System32!\WindowsPowerShell\v1.0" Powershell
-	1>NUL !Chcp! 65001
+	1>NUL "!Chcp!" 65001
 
 	REM Remove trailing backslash "\"
 	REM Source: https://stackoverflow.com/a/60414485/13823467
@@ -267,7 +267,7 @@ REM ------------------------ Init ------------------------
 	SET "DifferentCmdLine=!PckDir!\.\%~nx0"
 
 	IF NOT EXIST "!TmpDir!\REPLVAR.BAT" (
-		1>NUL !Certutil! -decode "%~f0" "!TmpDir!\REPLVAR.BAT"
+		1>NUL "!Certutil!" -decode "%~f0" "!TmpDir!\REPLVAR.BAT"
 	)
 
 	SET "Verbose=1"
@@ -476,7 +476,7 @@ EXIT /B 0
 SETLOCAL
 	SET "Package=%~1"
 
-	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| !Sort!') DO (
+	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
 		SETLOCAL
 		IF "!Package!"=="all" (
 			SET "Pkg=%%~A"
@@ -568,9 +568,9 @@ SETLOCAL
 
 	SET "TmpTIME=!TIME:~,-3!"
 	SET "FinishedAt=!TmpTIME: =0!, !DATE!"
-	1>NUL !Chcp! 1252
-	!Powershell! -Command Remove-Item Alias:curl; curl --location """!URL!""" --output """!DestFile!""" 2^>^&1 ^| Select-String k ^| Foreach-Object {$data = (([string] $_).Trim() -Split '\s+')[0,1,3,9]; Write-Host -NoNewline """[PROGRESS] !ESC![37;1;4m$($data[0])%%!ESC![0m: $($data[2])B / $($data[1])B. Elapsed: $($data[3]).!WhiteSpaceBuffer!!CR!"""}; $FinishedAt=cmd.exe '/V /C SET "TmpTIME=^^^!TIME:~,-3^^^!"^&SET "FinishedAt=^^^!TmpTIME: =0^^^!, ^^^!DATE^^^!"^&ECHO ^^^!FinishedAt^^^!'; $FinishedAt=$FinishedAt.Trim().Replace('""""', ''); Write-Host """!ESC![32m[PROGRESS] !ESC![32;1;4m100%%!ESC![0m!ESC![32m: $($data[2])B / $($data[1])B. Elapsed: $($data[3]). Finished at $($FinishedAt).!ESC![0m"""
-	1>NUL !Chcp! 65001
+	1>NUL "!Chcp!" 1252
+	"!Powershell!" -Command Remove-Item Alias:curl; curl --location """!URL!""" --output """!DestFile!""" 2^>^&1 ^| Select-String k ^| Foreach-Object {$data = (([string] $_).Trim() -Split '\s+')[0,1,3,9]; Write-Host -NoNewline """[PROGRESS] !ESC![37;1;4m$($data[0])%%!ESC![0m: $($data[2])B / $($data[1])B. Elapsed: $($data[3]).!WhiteSpaceBuffer!!CR!"""}; $FinishedAt=cmd.exe '/V /C SET "TmpTIME=^^^!TIME:~,-3^^^!"^&SET "FinishedAt=^^^!TmpTIME: =0^^^!, ^^^!DATE^^^!"^&ECHO ^^^!FinishedAt^^^!'; $FinishedAt=$FinishedAt.Trim().Replace('""""', ''); Write-Host """!ESC![32m[PROGRESS] !ESC![32;1;4m100%%!ESC![0m!ESC![32m: $($data[2])B / $($data[1])B. Elapsed: $($data[3]). Finished at $($FinishedAt).!ESC![0m"""
+	1>NUL "!Chcp!" 65001
 ENDLOCAL
 EXIT /B 0
 
@@ -602,7 +602,7 @@ SETLOCAL
 	ECHO Set xHttp = Nothing >>"!TmpDir!\DownloadWithVbs.vbs"
 	ECHO Set bStrm = Nothing >>"!TmpDir!\DownloadWithVbs.vbs"
 
-	!Cscript! //NOLOGO "!TmpDir!\DownloadWithVbs.vbs"
+	"!Cscript!" //NOLOGO "!TmpDir!\DownloadWithVbs.vbs"
 ENDLOCAL
 EXIT /B 0
 
@@ -694,7 +694,7 @@ SETLOCAL
 	ECHO Set FSO=Nothing >>"!TmpDir!\Unzip.vbs"
 	ECHO Set objShell=Nothing >>"!TmpDir!\Unzip.vbs"
 
-	!Cscript! //NOLOGO "!TmpDir!\Unzip.vbs"
+	"!Cscript!" //NOLOGO "!TmpDir!\Unzip.vbs"
 	REM TODO: Catch Unzipping error 
 ENDLOCAL
 EXIT /B 0
@@ -755,7 +755,7 @@ SETLOCAL
 	ECHO Set Folder = ShellApp.Namespace("!DestFolder!") >>"!TmpDir!\MoveFilesWithVbsAndDeleteDir.vbs"
 	ECHO Folder.MoveHere "!SrcFolder!\*" >>"!TmpDir!\MoveFilesWithVbsAndDeleteDir.vbs"
 
-	!Cscript! //NOLOGO "!TmpDir!\MoveFilesWithVbsAndDeleteDir.vbs"
+	"!Cscript!" //NOLOGO "!TmpDir!\MoveFilesWithVbsAndDeleteDir.vbs"
 	2>NUL RD "!SrcFolder!"
 ENDLOCAL
 EXIT /B 0
@@ -775,7 +775,7 @@ SETLOCAL
 	ECHO Set oMyShortCut = Nothing >>"!TmpDir!\CreateShortcut.vbs"
 	ECHO Set WshShell = Nothing >>"!TmpDir!\CreateShortcut.vbs"
 
-	!Cscript! //NOLOGO "!TmpDir!\CreateShortcut.vbs"
+	"!Cscript!" //NOLOGO "!TmpDir!\CreateShortcut.vbs"
 ENDLOCAL
 EXIT /B 0
 
@@ -805,9 +805,9 @@ SETLOCAL
 	SET "TmpFile=!TmpDir!\determineFileExtension.extension"
 
 	2>NUL DEL "!TmpFile!"
-	1>NUL !Chcp! 1252
-	!Powershell! -Command Remove-Item Alias:curl; curl --location --range 0-32 """!URL!""" --output """!TmpFile!""" 2^>^&1 ^| Select-String k ^| Foreach-Object {$data = ^(^([string] $_^).Trim^(^) -Split '\s+'^)[0,1,3,9]; If ^( ^(Invoke-Expression^($data[2].replace^('k','*1000'^).replace^('M','*1000000'^)^)^) -gt 26 ^){ exit }}
-	1>NUL !Chcp! 65001
+	1>NUL "!Chcp!" 1252
+	"!Powershell!" -Command Remove-Item Alias:curl; curl --location --range 0-32 """!URL!""" --output """!TmpFile!""" 2^>^&1 ^| Select-String k ^| Foreach-Object {$data = ^(^([string] $_^).Trim^(^) -Split '\s+'^)[0,1,3,9]; If ^( ^(Invoke-Expression^($data[2].replace^('k','*1000'^).replace^('M','*1000000'^)^)^) -gt 26 ^){ exit }}
+	1>NUL "!Chcp!" 65001
 	IF NOT EXIST "!TmpFile!" (
 		IF NOT "!LastRedirectURL!"=="" CALL :ColorEcho WARNING def "File type for URL could not be determined, because there probably was some problem with curl." 1 0
 		SET "FileExtension=undetermined"
@@ -824,9 +824,9 @@ SETLOCAL
 	SET "ReturnVar1=%~2"
 
 	REM Get first 26 Bytes
-	1>NUL !Chcp! 1252
-	FOR /F "DELIMS=" %%A IN ('!Powershell! -Command ^(Get-Content '!ScrFile!' -Encoding byte -TotalCount 26^) -Join ' '') DO (SET "First26Bytes=%%A")
-	1>NUL !Chcp! 65001
+	1>NUL "!Chcp!" 1252
+	FOR /F "DELIMS=" %%A IN ('"!Powershell!" -Command ^(Get-Content '!ScrFile!' -Encoding byte -TotalCount 26^) -Join ' '') DO (SET "First26Bytes=%%A")
+	1>NUL "!Chcp!" 65001
 
 	REM Check signatures/magic bytes
 	REM Current managable file types: zip, 7z, exe, msi, bat/cmd
@@ -873,7 +873,7 @@ SETLOCAL
 	SET "ReturnVar1=%~2"
 
 	SET "LastRedirectURL="
-	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL curl --silent --location --head -X GET "!URL!" ^| !Findstr! "Location: "') DO (SET "LastRedirectURL=%%A")
+	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL curl --silent --location --head -X GET "!URL!" ^| "!Findstr!" "Location: "') DO (SET "LastRedirectURL=%%A")
 	IF NOT DEFINED LastRedirectURL SET "LastRedirectURL=!URL!"
 
 ENDLOCAL & SET "%ReturnVar1%=%LastRedirectURL%"
@@ -1082,13 +1082,13 @@ SETLOCAL
 	:Continue
 	SET "ProgramPath="
 	FOR /F "DELIMS=" %%A IN (
-		'2^>NUL !Where! "!DefaultLocation!":"!FileName!"'
+		'2^>NUL "!Where!" "!DefaultLocation!":"!FileName!"'
 	) DO (
 		SET "ProgramPath=%%~A"
 		GOTO :Found
 	)
 	FOR /F "DELIMS=" %%A IN (
-		'2^>NUL !Where! "!FileName!"'
+		'2^>NUL "!Where!" "!FileName!"'
 	) DO (
 		SET "ProgramPath=%%~A"
 		GOTO :Found
@@ -1099,7 +1099,7 @@ SETLOCAL
 	EXIT /B 1
 
 	:Found
-ENDLOCAL & SET "%ReturnVar1%="%ProgramPath%""
+ENDLOCAL & SET "%ReturnVar1%=%ProgramPath%"
 EXIT /B 0
 
 REM ------------------------ ProgramWorks ------------------------
@@ -1311,7 +1311,7 @@ SETLOCAL
 	IF NOT "!Orig0thParam!"=="!DifferentCmdLine!" (
 		2>NUL RD /S /Q "!TmpDird!"
 	)
-	1>NUL !Chcp! !OldCodePage!
+	1>NUL "!Chcp!" !OldCodePage!
 	POPD
 ENDLOCAL
 EXIT /B 0
@@ -1634,7 +1634,7 @@ IHsNCiAgICBXU2NyaXB0LlN0ZG91dC5Xcml0ZSgiMSIpOw0KICB9DQp9
 -----END CERTIFICATE-----
 
 REM Ideas/TODOs:
-REM Get latest Github Releases: (FOR /F "!SKIP! TOKENS=1* DELIMS=: " %A IN ('curl --silent --location "https://api.github.com/repos/telegramdesktop/tdesktop/releases/latest" ^| !Findstr! /R "browser_download_url.*zip"') DO @(IF NOT DEFINED URL SET "URL=%~B")) & ECHO !URL! & SET URL=
+REM Get latest Github Releases: (FOR /F "!SKIP! TOKENS=1* DELIMS=: " %A IN ('curl --silent --location "https://api.github.com/repos/telegramdesktop/tdesktop/releases/latest" ^| "!Findstr!" /R "browser_download_url.*zip"') DO @(IF NOT DEFINED URL SET "URL=%~B")) & ECHO !URL! & SET URL=
 REM Save last direct download link in installation folder to check for new (different) version
 REM Sourceforge API /best_release.json
 REM Find programs instead of programworks
