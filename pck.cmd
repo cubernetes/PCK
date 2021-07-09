@@ -1,19 +1,10 @@
 ::bat
-
-:: PCK Package Manager for Windows ::
-:: PCK is a minimalist package manager for Windows. It extremely quick to use and it is very easy to add new packges to the list decentral list. 
-
-:: # Usage
-:: pck package         # installs a package
-:: pck i package       # shows info for a package
-:: pck r package       # uninstalls (removes) a package
-:: pck u package link  # updates a package's link
-:: pck a package link  # adds a package to list
-:: pck list            # lists all packages
-:: pck list "regex"    # lists all packages that match the regex
+:: PCK Package Manager for Windows
+:: https://github.com/cubernetes/PCK-Package-Manager
 
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion EnableExtensions
+
 CALL :Init "%~1"
 
 CALL :Main "%~0" %*
@@ -70,8 +61,8 @@ SETLOCAL
 	)
 
 	IF "!Arg1!"=="i" (
-		CALL :WarnAboutIgnoredArgs 3 %*
-		CALL :ShowInformation "!Arg2!"
+		CALL :WarnAboutIgnoredArgs 4 %*
+		CALL :ShowInformation "!Arg2!" "!Arg3!"
 		GOTO :Finish
 	)
 
@@ -474,6 +465,14 @@ EXIT /B 0
 :ShowInformation
 SETLOCAL
 	SET "Package=%~1"
+	SET "Offline=%~2"
+
+	IF DEFINED Offline (
+		IF NOT "!Offline!"=="offline" (
+			CALL :ColorEcho WARNING def 1 0 "Ignoring unknown argument `!Offline!`."
+			SET "Offline="
+		)
+	)
 
 	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
 		SETLOCAL
@@ -489,11 +488,33 @@ SETLOCAL
 			SET "URL32bit=%%~D"
 			SET "WhereToFindURLs=%%~E"
 
-			CALL :FollowURL URL LastRedirectURL
-			CALL :FollowURL URL32bit LastRedirectURL32bit
+			IF NOT DEFINED Offline (
+				CALL :FollowURL URL LastRedirectURL
+				CALL :FollowURL URL32bit LastRedirectURL32bit
 
-			CALL :DetermineFileExtensionOfURL LastRedirectURL FileExtension
-			CALL :DetermineFileExtensionOfURL LastRedirectURL32bit FileExtension32bit
+				CALL :GetFileSize LastRedirectURL FileSize FileSizeMB
+				CALL :GetFileSize LastRedirectURL32bit FileSize32bit FileSizeMB32bit
+
+				SET "FileSize=~!FileSizeMB! MB (!FileSize! Bytes)"
+				SET "FileSize32bit=~!FileSizeMB32bit! MB (!FileSize32bit! Bytes)"
+
+				CALL :DetermineFileExtensionOfURL LastRedirectURL FileExtension
+				CALL :DetermineFileExtensionOfURL LastRedirectURL32bit FileExtension32bit
+			) ELSE (
+				SET "Unknown=Unknown due to offline argument"
+
+				SET "LastRedirectURL=!Unknown!"
+				SET "LastRedirectURL32bit=!Unknown!"
+
+				SET "FileSize=!Unknown!"
+				SET "FileSize32bit=!Unknown!"
+
+				SET "FileSize=!Unknown!"
+				SET "FileSize32bit=!Unknown!"
+
+				SET "FileExtension=!Unknown!"
+				SET "FileExtension32bit=!Unknown!"
+			)
 
 			CALL :ColorEcho ACTION def 1 1 "Showing information for "!Pkg!"."
 			CALL :ColorEcho "" white 1 0 ""
@@ -504,15 +525,13 @@ SETLOCAL
 			CALL :ColorEcho "" cyan 1 0 "### 64 bit ###"
 			ECHO     Download link:                             !ESC![4m!URL!!ESC![0m
 			ECHO     Direct download link ^(derived from above^): !ESC![32;4m!LastRedirectURL!!ESC![0m
-			ECHO     File size:                                 !ESC![4m~!FileSizeMB! MB!ESC![0m ^(!FileSize! Bytes^)
+			ECHO     File size:                                 !ESC![4m!FileSize!!ESC![0m
 			ECHO     File type:                                 !ESC![4m!FileExtension!!ESC![0m
-			ECHO     Version:                                   !ESC![4mUnknown!ESC![0m
 			CALL :ColorEcho "" cyan 1 0 "### 32 bit ###"
 			ECHO     Download link:                             !ESC![4m!URL32bit!!ESC![0m
 			ECHO     Direct download link ^(derived from above^): !ESC![32;4m!LastRedirectURL32bit!!ESC![0m
-			ECHO     File size:                                 !ESC![4m~!FileSizeMB32bit! MB!ESC![0m ^(!FileSize32bit! Bytes^)
+			ECHO     File size:                                 !ESC![4m!FileSize32bit!!ESC![0m
 			ECHO     File type:                                 !ESC![4m!FileExtension32bit!!ESC![0m
-			ECHO     Version:                                   !ESC![4mUnknown!ESC![0m
 			IF NOT "!Pkg!"=="all" (
 				ENDLOCAL
 				EXIT /B 0
@@ -783,6 +802,20 @@ SETLOCAL
 	)
 ENDLOCAL
 EXIT /B 0
+
+REM ------------------------ GetFileSize ------------------------
+:GetFileSize
+SETLOCAL
+	SET "URL=!%~1!"
+	SET "ReturnVar1=%~2"
+	SET "ReturnVar2=%~3"
+
+	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL "!Curl!" --head --silent --location "!URL!" ^| "!Findstr!" "Content-Length: "') DO (SET "FileSize=%%A")
+	>NUL SET /A "FileSize=FileSize / 1"
+	>NUL SET /A "FileSizeMB=FileSize / 1000000"
+ENDLOCAL & SET "%ReturnVar1%=%FileSize%" & SET "%ReturnVar2%=%FileSizeMB%"
+EXIT /B 0
+
 
 REM ------------------------ DetermineFileExtensionOfURL ------------------------
 :DetermineFileExtensionOfURL
