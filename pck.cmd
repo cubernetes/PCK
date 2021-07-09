@@ -926,7 +926,7 @@ SETLOCAL
 			CALL :ColorEcho "" green 1 1 " Success^!"
 		)
 	)
-ENDLOCAL & SET "PATH=%PATH%"
+ENDLOCAL & SET "PATH=%PATH%" & SET "PATHEXT=%PATHEXT%"
 EXIT /B 0
 
 REM ------------------------ UpdatePathExt ------------------------
