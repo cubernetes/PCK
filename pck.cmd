@@ -33,13 +33,13 @@ SETLOCAL
 	%$ToLower% Arg3
 	%$ToLower% Arg4
 
-	REM --------------------------- List packages ---------------------------
 	IF "!Arg1!"=="help" (
 		CALL :WarnAboutIgnoredArgs 2 %*
 		CALL :ShowHelp
 		GOTO :Finish
 	)
 
+	REM --------------------------- List packages ---------------------------
 	IF "!Arg1!"=="list" (
 		CALL :WarnAboutIgnoredArgs 3 %*
 		IF DEFINED Arg2 (
@@ -48,7 +48,7 @@ SETLOCAL
 				CALL :ColorEcho INFO def 1 0 "The reason for this error is unclear to me, but you know, it's batch."
 				GOTO :Error
 			)
-			CALL :ColorEcho INFO def 1 1 "Showing all available packages that match the regex `!Arg2!`."
+			CALL :ColorEcho ACTION def 1 1 "Showing all available packages that match the regex `!Arg2!`."
 			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!"  ^| "!Findstr!" /I /R "^^[!AlnumCharClass!]*!Arg2![!AlnumCharClass!]*;" ^| "!Sort!"') DO @(
 				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
 					ECHO - %%~A
@@ -57,7 +57,7 @@ SETLOCAL
 				)
 			)
 		) ELSE (
-			CALL :ColorEcho INFO def 1 1 "Showing all available packages."
+			CALL :ColorEcho ACTION def 1 1 "Showing all available packages."
 			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
 				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
 					ECHO - %%~A
@@ -71,7 +71,7 @@ SETLOCAL
 
 	IF "!Arg1!"=="i" (
 		CALL :WarnAboutIgnoredArgs 3 %*
-		CALL :ShowInformation "%2"
+		CALL :ShowInformation "!Arg2!"
 		GOTO :Finish
 	)
 
@@ -98,7 +98,6 @@ SETLOCAL
 		CALL :ShowHelp
 		GOTO :Finish
 	)
-
 
 	CALL :WarnAboutIgnoredArgs 1 %*
 	REM --------------------------- Install package ---------------------------
@@ -171,11 +170,11 @@ SETLOCAL
 				SET /A "CanUse64Bit=a & b"
 
 				IF "!CanUse64Bit!"=="1" (
-					CALL :ColorEcho INFO def 1 0 "64 bit version of "!Arg1!" will be downloaded."
+					CALL :ColorEcho ACTION def 1 0 "Getting 64 bit version of "!Arg1!"."
 					CALL :Download LastRedirectURL "!TmpDir!\!Name!.!FileExtension!"
 					SET "Extension=!FileExtension!"
 				) ELSE (
-					CALL :ColorEcho INFO def 1 0 "32 bit version of "!Arg1!" will be downloaded."
+					CALL :ColorEcho ACTION def 1 0 "Getting 32 bit version of "!Arg1!"."
 					CALL :Download LastRedirectURL32bit "!TmpDir!\!Name!.!FileExtension32bit!"
 					SET "Extension=!FileExtension32bit!"
 				)
@@ -610,7 +609,7 @@ REM ------------------------ DownloadDependency ------------------------
 :DownloadDependency
 SETLOCAL
 	SET "Package=%~1"
-	CALL :ColorEcho INFO def 1 1 "!Package! will now be downloaded in a separate process."
+	CALL :ColorEcho ACTION def 1 1 "!Package! will now be downloaded in a separate process."
 	CALL :ColorEcho "" white 1 1 ""
 	CALL :ColorEcho "" white 1 1 "[-----Installing dependency: !Package!-----]"
 	CMD /C ^""!DifferentCmdLine!" !Package!^"
@@ -641,39 +640,17 @@ SETLOCAL
 		7z x -bsp1 -o"!DestFolder!" "!SrcFile!"
 	)
 
-	CALL :RemoveNestedFolderStructure "!DestFolder!" "!DestFolder!"
-	IF "!ERRORLEVEL!"=="0" (
+	SET "ItemCount=0"
+	FOR /F %%A IN ('DIR "!DestFolder!" /A /B') DO (1>NUL SET /A "ItemCount+=1")
+
+	IF NOT "!ItemCount!"=="0" (
 		CALL :ColorEcho SUCCESS def 1 1 "Successfully unzipped "!SrcFile!" to "!DestFolder!"^!"
 	) ELSE (
 		CALL :ColorEcho ERROR def 1 1 "Could not unzip "!SrcFile!" to "!DestFolder!"."
 		GOTO :Error		
 	)
-
-	ENDLOCAL
-	EXIT /B 0
-
-	SET "ItemCount=0"
-	FOR /F %%A IN ('DIR "!DestFolder!" /A /B') DO (1>NUL SET /A "ItemCount+=1")
-	IF !ItemCount! GEQ 2 (
-		CALL :ColorEcho SUCCESS def 1 1 "Successfully unzipped "!SrcFile!" to "!DestFolder!"^!"
-	) ELSE (
-		IF !ItemCount! EQU 1 (
-			CALL :ColorEcho SUCCESS def 1 1 "Successfully unzipped "!SrcFile!" to "!DestFolder!"^!"
-			SET "Directory=-"
-			FOR /F "DELIMS=" %%A IN ('DIR "!DestFolder!" /AD /B') DO (SET "Directory=%%A")
-			IF NOT "!Directory!"=="-" (
-				CALL :ColorEcho INFO def 1 1 "The contents of the zip file need to be moved up one folder."
-				CALL :ColorEcho ACTION def 1 1 "Moving the contents of "!DestFolder!\!Directory!" to "!DestFolder!" with VBScript:"
-				CALL :MoveFilesWithVbsAndDeleteDir "!DestFolder!\!Directory!" "!DestFolder!"
-				2>NUL RD /S /Q "!DestFolder!\!Directory!"
-				CALL :ColorEcho SUCCESS def 1 1 "Successfully moved the contents one folder up."
-			)
-		) ELSE (
-			CALL :ColorEcho ERROR def 1 1 "Could not unzip "!SrcFile!" to "!DestFolder!"."
-			GOTO :Error
-		)
-	)
-	ENDLOCAL
+	CALL :RemoveNestedFolderStructure "!DestFolder!" "!DestFolder!"
+ENDLOCAL
 EXIT /B 0
 
 REM ------------------------ UnzipWithVbs ------------------------
@@ -715,7 +692,6 @@ EXIT /B 0
 REM ------------------------ RemoveNestedFolderStructure ------------------------
 :RemoveNestedFolderStructure
 SETLOCAL
-	REM TODO Rethink ~f choice
 	SET "TargetFolder=%~f1"
 	SET "DestFolder=%~f2"
 
@@ -724,7 +700,7 @@ SETLOCAL
 
 	IF !ItemCount! GEQ 2 (
 		IF NOT "!TargetFolder!"=="!DestFolder!" (
-			CALL :MoveFilesWithVbsAndDeleteDir "!TargetFolder!" "!DestFolder!"
+			CALL :MoveFilesWithVbsAndDeleteDirWrapper "!TargetFolder!" "!DestFolder!"
 		)
 	) ELSE IF !ItemCount! EQU 1 (
 		SET "Directory=NotADirectory"
@@ -732,7 +708,7 @@ SETLOCAL
 		IF NOT "!Directory!"=="NotADirectory" (
 			CALL :RemoveNestedFolderStructure "!TargetFolder!\!Directory!" "!DestFolder!"
 		) ELSE IF NOT "!TargetFolder!"=="!DestFolder!" (
-			CALL :MoveFilesWithVbsAndDeleteDir "!TargetFolder!" "!DestFolder!"
+			CALL :MoveFilesWithVbsAndDeleteDirWrapper "!TargetFolder!" "!DestFolder!"
 		)
 	) ELSE (
 		ENDLOCAL
@@ -742,6 +718,18 @@ SETLOCAL
 ENDLOCAL
 EXIT /B 0
 
+REM ------------------------ MoveFilesWithVbsAndDeleteDirWrapper ------------------------
+:MoveFilesWithVbsAndDeleteDirWrapper
+SETLOCAL
+	SET "SrcFolder=%~1"
+	SET "DestFolder=%~2"
+
+	CALL :ColorEcho INFO def 1 1 "The contents of the zip file need to be moved up one folder."
+	CALL :ColorEcho ACTION def 1 1 "Moving the contents of "!SrcFolder!" to "!DestFolder!" with VBScript:"
+	CALL :MoveFilesWithVbsAndDeleteDir "!SrcFolder!" "!DestFolder!"
+	CALL :ColorEcho SUCCESS def 1 1 "Successfully moved the contents one folder up^!"
+ENDLOCAL
+EXIT /B 0
 
 REM ------------------------ MoveFilesWithVbsAndDeleteDir ------------------------
 :MoveFilesWithVbsAndDeleteDir
@@ -885,8 +873,10 @@ SETLOCAL
 	CALL :GetPaths "PATH" "OldPATH" "OldSystemPATH"
 
 	REM Update this local PATH.
-	IF NOT "!PATH:~-1!"==";" SET "PATH=!PATH!;"
-	SET "PATH=!PATH!!RedirectsDir!;!PckDir!"
+	IF "!PATH:%RedirectsDir%=!"=="!PATH!" (
+		IF NOT "!PATH:~-1!"==";" SET "PATH=!PATH!;"
+		SET "PATH=!PATH!!RedirectsDir!;!PckDir!"
+	)
 
 	IF "!OldPATH:%RedirectsDir%=!;!OldSystemPATH:%RedirectsDir%=!"=="!OldPATH!;!OldSystemPATH!" (
 		CALL :ColorEcho INFO def 1 1 "Redirects and PCK directory are not in PATH"
@@ -981,7 +971,7 @@ SETLOCAL
 %= BLANK LINE REQUIRED =%
 )
 	REM Must be defined here.
-	SET "CR=" & IF NOT DEFINED CR FOR /F "SKIP=1" %%C IN ('ECHO(^|REPLACE ? . /W /U') DO (SET "CR=%%C")
+	SET "CR=" & IF NOT DEFINED CR FOR /F "SKIP=1" %%C IN ('ECHO(^|"!Replace!" ? . /W /U') DO (SET "CR=%%C")
 
 	SET "ddx=!"
 	SETLOCAL EnableDelayedExpansion
@@ -1240,7 +1230,6 @@ SETLOCAL EnableDelayedExpansion
 				) ELSE IF "!Type!"=="sourceforge" (
 					ECHO SOURCEFORGE
 				) ELSE (
-					ECHO !Type!
 					CALL CALL :ColorEcho WARNING def 1 0 "Type !Type! for package "%%%%PackageList[%%j%%][name]%%%%" does not exist."
 				)
 			)
@@ -1275,7 +1264,8 @@ REM ------------------------ Cleanup ------------------------
 SETLOCAL
 	SET "Orig0thParam=%~1"
 	IF NOT "!Orig0thParam!"=="!DifferentCmdLine!" (
-		2>NUL RD /S /Q "!TmpDird!"
+		REM TODO
+		REM 2>NUL RD /S /Q "!TmpDir!"
 	)
 	1>NUL "!Chcp!" !OldCodePage!
 	POPD
@@ -1298,7 +1288,7 @@ REM Source: https://stackoverflow.com/a/61782349
 :Error - Cleanly exit batch processing, regardless how many CALLs
 	CALL :ColorEcho "" white 1 0 ""
 	CALL :Cleanup "%0"
-	CALL :ColorEcho INFO def 1 0 "Exiting."
+	CALL :ColorEcho ACTION def 1 0 "Exiting."
 	IF NOT EXIST "!TEMP!\ExitBatchYes.txt" CALL :BuildYes
 	1>NUL 2>&1 <"!TEMP!\ExitBatchYes.txt" CALL :CtrlC
 
