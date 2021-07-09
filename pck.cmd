@@ -262,7 +262,7 @@ REM ------------------------ Init ------------------------
 	REM "
 	SET "DifferentCmdLine=!PckDir!\.\%~nx0"
 
-	SET "Verbose=1"
+	SET "Verbose=0"
 
 	CALL :UpdatePath
 	CALL :UpdatePathExt
@@ -500,20 +500,6 @@ SETLOCAL
 
 				CALL :DetermineFileExtensionOfURL LastRedirectURL FileExtension
 				CALL :DetermineFileExtensionOfURL LastRedirectURL32bit FileExtension32bit
-			) ELSE (
-				SET "Unknown=Unknown due to offline argument"
-
-				SET "LastRedirectURL=!Unknown!"
-				SET "LastRedirectURL32bit=!Unknown!"
-
-				SET "FileSize=!Unknown!"
-				SET "FileSize32bit=!Unknown!"
-
-				SET "FileSize=!Unknown!"
-				SET "FileSize32bit=!Unknown!"
-
-				SET "FileExtension=!Unknown!"
-				SET "FileExtension32bit=!Unknown!"
 			)
 
 			CALL :ColorEcho ACTION def 1 1 "Showing information for "!Pkg!"."
@@ -524,14 +510,24 @@ SETLOCAL
 			ECHO     Where to find new download links:          !ESC![4m!WhereToFindURLs!!ESC![0m
 			CALL :ColorEcho "" cyan 1 0 "### 64 bit ###"
 			ECHO     Download link:                             !ESC![4m!URL!!ESC![0m
-			ECHO     Direct download link ^(derived from above^): !ESC![32;4m!LastRedirectURL!!ESC![0m
-			ECHO     File size:                                 !ESC![4m!FileSize!!ESC![0m
-			ECHO     File type:                                 !ESC![4m!FileExtension!!ESC![0m
+			IF NOT DEFINED Offline (
+				ECHO     Direct download link ^(derived from above^): !ESC![32;4m!LastRedirectURL!!ESC![0m
+				ECHO     File size:                                 !ESC![4m!FileSize!!ESC![0m
+				ECHO     File type:                                 !ESC![4m!FileExtension!!ESC![0m
+			)
 			CALL :ColorEcho "" cyan 1 0 "### 32 bit ###"
 			ECHO     Download link:                             !ESC![4m!URL32bit!!ESC![0m
-			ECHO     Direct download link ^(derived from above^): !ESC![32;4m!LastRedirectURL32bit!!ESC![0m
-			ECHO     File size:                                 !ESC![4m!FileSize32bit!!ESC![0m
-			ECHO     File type:                                 !ESC![4m!FileExtension32bit!!ESC![0m
+			IF NOT DEFINED Offline (
+				ECHO     Direct download link ^(derived from above^): !ESC![32;4m!LastRedirectURL32bit!!ESC![0m
+				ECHO     File size:                                 !ESC![4m!FileSize32bit!!ESC![0m
+				ECHO     File type:                                 !ESC![4m!FileExtension32bit!!ESC![0m
+			)
+
+			IF DEFINED Offline (
+				CALL :ColorEcho "" white 1 1 ""
+				CALL :ColorEcho INFO def 1 1 "There was information left out because of the offline argument."
+			)
+
 			IF NOT "!Pkg!"=="all" (
 				ENDLOCAL
 				EXIT /B 0
