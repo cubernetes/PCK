@@ -49,7 +49,7 @@ SETLOCAL
 				GOTO :Error
 			)
 			CALL :ColorEcho INFO def "Showing all available packages that match the regex `!Arg2!`." 1 1
-			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PckDir!\packages.csv"  ^| !Findstr! /I /R "^^[!AlnumCharClass!]*!Arg2![!AlnumCharClass!]*;" ^| !Sort!') DO @(
+			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!"  ^| !Findstr! /I /R "^^[!AlnumCharClass!]*!Arg2![!AlnumCharClass!]*;" ^| !Sort!') DO @(
 				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
 					ECHO - %%~A
 				) ELSE (
@@ -58,7 +58,7 @@ SETLOCAL
 			)
 		) ELSE (
 			CALL :ColorEcho INFO def "Showing all available packages." 1 1
-			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PckDir!\packages.csv" ^| !Sort!') DO (
+			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| !Sort!') DO (
 				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
 					ECHO - %%~A
 				) ELSE (
@@ -102,7 +102,7 @@ SETLOCAL
 
 	CALL :WarnAboutIgnoredArgs 1 %*
 	REM --------------------------- Install package ---------------------------
-	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PckDir!\packages.csv" ^| !Sort!') DO (
+	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| !Sort!') DO (
 
 		IF "%%~A"=="!Arg1!" (
 
@@ -260,6 +260,8 @@ REM ------------------------ Init ------------------------
 
 	SET "RedirectsDir=!BaseDir!\Redirects"
 	SET "TmpDir=!BaseDir!\tmp"
+
+	SET "PackagesFilePath=!PckDir!\packages.csv"
 
 	SET "Space= "
 	SET "DifferentCmdLine=!PckDir!\.\%~nx0"
@@ -474,7 +476,7 @@ EXIT /B 0
 SETLOCAL
 	SET "Package=%~1"
 
-	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PckDir!\packages.csv" ^| !Sort!') DO (
+	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| !Sort!') DO (
 		SETLOCAL
 		IF "!Package!"=="all" (
 			SET "Pkg=%%~A"
@@ -520,7 +522,7 @@ SETLOCAL
 		ENDLOCAL
 	)
 	IF NOT "!Package!"=="all" (
-		CALL :ColorEcho ERROR def "The package "!Package!" could not be found in "!PckDir!\packages.csv"." 1 0
+		CALL :ColorEcho ERROR def "The package "!Package!" could not be found in "!PackagesFilePath!"." 1 0
 		GOTO :Error
 	) ELSE (
 		CALL :ColorEcho INFO def "Successfully showed information for all packages." 1 1
@@ -1129,7 +1131,7 @@ SETLOCAL
 	SET "CommandWithArgs=!Command!"
 	SHIFT
 	SHIFT
-	SET =0
+	SET "NumberOfArgs=1"
 	FOR /L %%A IN (1,1,50) DO (
 		CALL SET "ShiftedArg=%%1"
 		IF "!ShiftedArg!"=="" (
