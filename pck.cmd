@@ -9,7 +9,7 @@ CALL :Init "%~1"
 
 CALL :Main "%~0" %*
 
-ENDLOCAL & SET "PATH=%PATH%"
+ENDLOCAL & SET "PATH=%PATH%" & SET "PATHEXT=%PATHEXT%"
 EXIT /B 0
 
 REM ------------------------ Main ------------------------
@@ -288,7 +288,7 @@ REM Above 2 blank lines required -- do not remove
 	REM For regex
 	SET "AlnumCharClass=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	ECHO START "" "!BaseDir!">"!RedirectsDir!\spck.cmd"
+	CALL :CreateShortcutWithVbs "!BaseDir!" "!RedirectsDir!\spck.lnk"
 
 	REM Curl is needed for various tasks like fetching information for the packages,
 	REM determining the file sizes or determining the file types/extensions.
@@ -926,7 +926,7 @@ SETLOCAL
 			CALL :ColorEcho "" green 1 1 " Success^!"
 		)
 	)
-ENDLOCAL & SET "PATH=%PATH%" & SET "PATHEXT=%PATHEXT%"
+ENDLOCAL & SET "PATH=%PATH%"
 EXIT /B 0
 
 REM ------------------------ UpdatePathExt ------------------------
