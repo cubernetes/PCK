@@ -18,8 +18,7 @@ CALL :Init
 
 CALL :Main %0 %*
 
-REM Nicer prompt and preserve path
-ENDLOCAL & SET "PATH=%PATH%" & PROMPT $E[0m$E[34m┌──$E[0m$E[36m[$T$H$H$H]$E[0m$E[34m─($E[0m$E[34;1m%USERNAME%@%USERDOMAIN%$E[0m$E[34m)─[$E[0m$E[32m$S$P$S$E[0m$E[34m]$_└───╼$E[0m$E[38;5;208m$$$S$E[0m
+ENDLOCAL & SET "PATH=%PATH%"
 EXIT /B 0
 
 REM ------------------------ Main ------------------------
@@ -34,7 +33,6 @@ SETLOCAL
 	%$ToLower% Arg3
 	%$ToLower% Arg4
 
-	ECHO Arg1:!Arg1!
 	REM --------------------------- List packages ---------------------------
 	IF "!Arg1!"=="help" (
 		CALL :WarnAboutIgnoredArgs 2 %*
