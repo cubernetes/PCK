@@ -60,4 +60,5 @@ telegram;             \Telegram.exe;                    "https://telegram.org/dl
 ngrok;                \ngrok.exe;                       "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip"; "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-386.zip"; "https://ngrok.com/download"
 putty;                \;                                "https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.75-installer.msi"; "https://the.earth.li/~sgtatham/putty/latest/w32/putty-0.75-installer.msi"; "https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html"
 wireguard;            \Wireguard\wireguard.exe;         "https://download.wireguard.com/windows-client/wireguard-amd64-0.3.16.msi"; "https://download.wireguard.com/windows-client/wireguard-x86-0.3.16.msi"; "https://download.wireguard.com/windows-client/"
+winzip;               \;                                "https://securedl.cdn.chip.de/downloads/14532718/winzip25-home.exe"; "https://securedl.cdn.chip.de/downloads/26512/winzip250-32.msi"; "https://search.chip.de/?q=winzip&it=1#gsc.tab=0&gsc.q=winzip&gsc.page=1"
 # sublimemerge

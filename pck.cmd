@@ -932,22 +932,16 @@ SETLOCAL
 
 		::%$Split% PATHEXT ;
 		::SET PATHEXT
-	ECHO "!OldPATHEXT:.LNK=!;!OldSystemPATHEXT:.LNK=!"=="!OldPATHEXT!;!OldSystemPATHEXT!"
 	IF "!OldPATHEXT:.LNK=!;!OldSystemPATHEXT:.LNK=!"=="!OldPATHEXT!;!OldSystemPATHEXT!" (
-		ECHO Yup gleich
 		CALL :ColorEcho INFO def 1 1 "Extension ".LNK" is not in "PATHEXT"."
 		CALL :ColorEcho ACTION def 0 1 "Adding extension ".LNK" permanently to "PATHEXT" with SETX..."
 
-		ECHO Hae
 		IF NOT "!OldPATHEXT!"==";" (
-			ECHO 1
 			1>NUL 2>&1 SETX PATHEXT "!OldPATHEXT!.LNK"
 		) ELSE (
 			IF "!PATHEXT:.LNK=!"=="!PATHEXT!" (
-				ECHO 2
 				1>NUL 2>&1 SETX PATHEXT "!PATHEXT!.LNK"
 			) ELSE (
-				ECHO 3
 				1>NUL 2>&1 SETX PATHEXT "!PATHEXT!"
 			)
 		)
