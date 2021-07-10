@@ -264,6 +264,8 @@ REM ------------------------ Init ------------------------
 
 	SET "Verbose=0"
 
+	CALL :DefineMacros
+
 	CALL :UpdatePath
 	CALL :UpdatePathExt
 
@@ -276,12 +278,6 @@ REM ------------------------ Init ------------------------
 	REM Create carriage return character for generating live download info.
 	SET "CR=" & IF NOT DEFINED CR FOR /F "SKIP=1" %%C IN ('ECHO(^|!Replace! ? . /W /U') DO (SET "CR=%%C")
 
-SET LF=^
-
-
-
-REM Above 2 blank lines required -- do not remove
-
 	REM Needed for live download info.
 	SET "WhiteSpaceBuffer=                                      "
 
@@ -292,8 +288,6 @@ REM Above 2 blank lines required -- do not remove
 
 	REM Curl is needed for various tasks like fetching information for the packages,
 	REM determining the file sizes or determining the file types/extensions.
-
-	CALL :DefineMacros
 
 	%$ToLower% Arg1
 	IF NOT "!Arg1!"=="curl" (
@@ -321,13 +315,13 @@ SET LF=^
 REM Above 2 lines required - do not remove
 SET ^"\n=^^^%LF%%LF%^%LF%%LF%^^"
 REM "
-
 REM Modified to work with Delayed Expansion enabled or disabled. For macro definition, it must be enabled.
 SET "$Split="
 SET "$Trim="
 SET "$ToLower="
 ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
 REM --------------------- Split Macro ---------------------
+REM Multiple delimiters are ignored
 SET $Split=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
 	FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
 		SET "String=%%!%%J%%!"%\n%
@@ -349,7 +343,7 @@ SET $Split=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
 )	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J[%%!i%%!]="%\n%
 SET /A "i+=1"%\n%
 SETLOCAL^&SETLOCAL EnableDelayedExpansion^)%\n%
-	^)%\n%
+ENDLOCAL^&ENDLOCAL^&SET "%%J[len]=%%!i%%!"^)%\n%
 ) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
 REM "
 
@@ -409,7 +403,7 @@ SET $ToLower=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
 )	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
 	^)%\n%
 ) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
-)
+) & SET ^"LF=^%LF%%LF%"
 REM "
 EXIT /B 0
 
@@ -931,8 +925,10 @@ SETLOCAL
 	CALL :GetPaths "PATHEXT" "OldPATHEXT" "OldSystemPATHEXT"
 
 	REM Update this local PATHEXT
-	IF NOT "!PATHEXT:~-1!"==";" SET "PATHEXT=!PATHEXT!;"
-	SET "PATHEXT=!PATHEXT!.LNK"
+	IF "!PATHEXT:.LNK=!"=="!PATHEXT!" (
+		IF NOT "!PATHEXT:~-1!"==";" SET "PATHEXT=!PATHEXT!;"
+		SET "PATHEXT=!PATHEXT!.LNK"
+	)
 
 	IF "!OldPATHEXT:.LNK=!;!OldSystemPATHEXT:.LNK=!"=="!OldPATHEXT!;!OldSystemPATHEXT!" (
 		CALL :ColorEcho INFO def 1 1 "Extension ".LNK" is not in "PATHEXT"."
