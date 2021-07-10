@@ -925,8 +925,8 @@ SETLOCAL
 	CALL :GetPaths "PATHEXT" "OldPATHEXT" "OldSystemPATHEXT"
 
 	REM Update this local PATHEXT
+	IF NOT "!PATHEXT:~-1!"==";" SET "PATHEXT=!PATHEXT!;"
 	IF "!PATHEXT:.LNK=!"=="!PATHEXT!" (
-		IF NOT "!PATHEXT:~-1!"==";" SET "PATHEXT=!PATHEXT!;"
 		SET "PATHEXT=!PATHEXT!.LNK"
 	)
 
@@ -934,7 +934,18 @@ SETLOCAL
 		CALL :ColorEcho INFO def 1 1 "Extension ".LNK" is not in "PATHEXT"."
 		CALL :ColorEcho ACTION def 0 1 "Adding extension ".LNK" permanently to "PATHEXT" with SETX..."
 
-		1>NUL 2>&1 SETX PATHEXT "!OldPATHEXT!.LNK"
+		:: %$Split% PATHEXT ;
+		:: SET PATHEXT
+
+		IF NOT "!OldPATHEXT!"==";" (
+			1>NUL 2>&1 SETX PATHEXT "!OldPATHEXT!.LNK"
+		) ELSE (
+			IF "!PATHEXT:.LNK=!"=="!PATHEXT!" (
+				1>NUL 2>&1 SETX PATHEXT "!PATHEXT!.LNK"
+			) ELSE (
+				1>NUL 2>&1 SETX PATHEXT "!PATHEXT!"
+			)
+		)
 
 		CALL :GetPaths "PATHEXT" "OldPATHEXT" "OldSystemPATHEXT"
 		IF "!OldPATHEXT:.LNK=!;!OldSystemPATHEXT:.LNK=!"=="!OldPATHEXT!;!OldSystemPATHEXT!" (
