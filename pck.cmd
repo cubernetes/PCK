@@ -28,12 +28,14 @@ SETLOCAL
 		CALL :WarnAboutIgnoredArgs 2 %*
 		CALL :ShowHelp
 		GOTO :Finish
+	) ELSE IF NOT DEFINED Arg1 (
+		CALL :ShowHelp
+		GOTO :Finish
 	)
 
-	REM --------------------------- List packages ---------------------------
 	IF "!Arg1!"=="list" (
 		CALL :WarnAboutIgnoredArgs 3 %*
-		CALL :ListPackages "!Arg2!"
+		CALL :ListPackages Arg2
 		GOTO :Finish
 	)
 
@@ -61,137 +63,12 @@ SETLOCAL
 		GOTO :Finish
 	)
 
-	REM --------------------------- Show Usage ---------------------------
-	IF NOT DEFINED Arg1 (
-		CALL :ShowHelp
-		GOTO :Finish
+	CALL :InstallPackage "!Arg2!"
+	IF "!ERRORLEVEL!"=="1" (
+		CALL :ColorEcho ERROR def 1 0 "That package does not exist"
+		GOTO :Error
 	)
 
-	CALL :WarnAboutIgnoredArgs 1 %*
-	REM --------------------------- Install package ---------------------------
-	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
-
-		IF "%%~A"=="!Arg1!" (
-
-			SET "Name=%%~A"
-			SET "RelPath=%%~B"
-			SET "URL=%%~C"
-			SET "URL32bit=%%~D"
-
-			IF NOT EXIST "!BaseDir!\!Name!!RelPath!" (
-
-				CALL :ColorEcho INFO def 1 1 "Package "!Arg1!" found!"
-
-				CALL :FollowURL URL LastRedirectURL
-				CALL :FollowURL URL32bit LastRedirectURL32bit
-
-				CALL :DetermineFileExtensionOfURL LastRedirectURL FileExtension
-				CALL :DetermineFileExtensionOfURL LastRedirectURL32bit FileExtension32bit
-
-				REM a => Architecture is 64 bit
-				REM b => File type for 64 bit version is not unknown and not undetermined
-				REM c => File type for 32 bit version is not unknown and not undetermined
-				REM
-				REM Truth table:
-				REM a b c Error    Use b instead of c
-				REM 0 0 0     1                     0
-				REM 0 0 1     0                     0
-				REM 0 1 0     1                     0
-				REM 0 1 1     0                     0
-				REM 1 0 0     1                     0
-				REM 1 0 1     0                     0
-				REM 1 1 0     0                     1
-				REM 1 1 1     0                     1
-				REM To get a formular for the Error variable, we can use a disjunctive normal form:
-				REM Error = (¬a ∧ ¬b ∧ ¬c) ∨ (¬a ∧ b ∧ ¬c) ∨ (a ∧ ¬b ∧ ¬c) <=>
-				REM Error = (¬a ∧ ¬c) ∨ (¬b ∧ ¬c)
-				REM With:
-				REM   ∧ = AND
-				REM   ∨ = OR
-				REM   ¬ = NOT
-				REM In batch:
-				REM SET /A "Error=(!a & !b) | (!b & !c)"
-				REM
-				REM Forumular for when to use the 64 bit version:
-				REM SET /A "CanUse64Bit=a & b"
-
-				SET "_ErrorString=unknown undetermined"
-
-				SET a=0
-				SET b=0
-				SET c=0
-				IF "!Architecture!"=="64" SET "a=1"
-				CALL CALL SET "TmpString=%%%%_ErrorString:%%FileExtension%%=%%%%"
-				CALL CALL SET "TmpString32bit=%%%%_ErrorString:%%FileExtension32bit%%=%%%%"
-				IF "!TmpString!"=="!_ErrorString!" SET "b=1"
-				IF "!TmpString32bit!"=="!_ErrorString!" SET "c=1"
-
-				REM Escaping exclamation points because of DelayedExpansion
-				SET /A "Error=(^!a & ^!c)|(^!b & ^!c)"
-
-				IF "!Error!"=="1" (
-					CALL :ColorEcho ERROR def 1 0 "There was no compatible version found for your machine."
-					CMD /C ^""!DifferentCmdLine!" i "!Name!"^"
-					GOTO :Error
-				)
-
-				SET /A "CanUse64Bit=a & b"
-
-				IF "!CanUse64Bit!"=="1" (
-					CALL :ColorEcho ACTION def 1 0 "Getting 64 bit version of "!Arg1!"."
-					CALL :Download LastRedirectURL "!TmpDir!\!Name!.!FileExtension!"
-					SET "Extension=!FileExtension!"
-				) ELSE (
-					CALL :ColorEcho ACTION def 1 0 "Getting 32 bit version of "!Arg1!"."
-					CALL :Download LastRedirectURL32bit "!TmpDir!\!Name!.!FileExtension32bit!"
-					SET "Extension=!FileExtension32bit!"
-				)
-
-				CALL :CreateFolder "!BaseDir!\!Name!"
-
-				IF "!Extension!"=="zip" (
-					CALL :Unzip "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="7z" (
-					CALL :Extract7z "!TmpDir!\!Name!.7z" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="exe" (
-					CALL :CheckExeExtractable "!TmpDir!\!Name!.exe" isExtractable
-					IF "!IsExtractable!"=="1" (
-						CALL :ExtractExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
-					) ELSE (
-						CALL :CheckExeInstaller "!TmpDir!\!Name!.exe" isInstaller
-						IF NOT "!IsInstaller!"=="1" (
-							CALL :InstallExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
-						) ELSE (
-							MOVE "!TmpDir!\!Name!.exe" "!BaseDir!\!Name!"
-						)
-					)
-				)
-				IF "!Extension!"=="msi" (
-					CALL :ExtractMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
-					REM Since you can always extract any MSI with windows built-in msiexec-utility, there's no need
-					REM to install any msi. Option to actually install it might be added later
-					REM CALL :InstallMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="bat" (
-					MOVE "!TmpDir!\!Name!.bat" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="ahk" (
-					MOVE "!TmpDir!\!Name!.ahk" "!BaseDir!\!Name!"
-				)
-
-				CALL :CreateShortcutWithVbs "!BaseDir!\!Name!!RelPath!" "!RedirectsDir!\!Name!.lnk"
-
-				GOTO :Finish
-			) ELSE (
-				CALL :ColorEcho INFO def 1 1 "!Name! is already installed in "!BaseDir!\!Name!". Use it with "!BaseDir!\!Name!!RelPath!"."
-				GOTO :Finish
-			)
-		)
-	)
-	CALL :ColorEcho ERROR def 1 0 "That package does not exist"
-	GOTO :Error
 
 	:Finish
 	CALL :Cleanup "%~0"
@@ -436,7 +313,7 @@ EXIT /B 0
 REM ----------------------- ListPackages -------------------------
 :ListPackages
 SETLOCAL
-	SET "Regex=%~1"
+	SET "Regex=!%~1!"
 
 	IF DEFINED Regex (
 		IF "!Arg2:~0,1!"=="-" (
@@ -464,6 +341,138 @@ SETLOCAL
 	)
 ENDLOCAL
 EXIT /B 0
+
+REM ----------------------- InstallPackage -------------------------
+:InstallPackage
+SETLOCAL
+	SET "Package=%~1"
+
+	CALL :WarnAboutIgnoredArgs 1 %*
+	REM --------------------------- Install package ---------------------------
+	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
+
+		IF "%%~A"=="!Package!" (
+
+			SET "Name=%%~A"
+			SET "RelPath=%%~B"
+			SET "URL=%%~C"
+			SET "URL32bit=%%~D"
+
+			IF NOT EXIST "!BaseDir!\!Name!!RelPath!" (
+
+				CALL :ColorEcho INFO def 1 1 "Package "!Package!" found!"
+
+				CALL :FollowURL URL LastRedirectURL
+				CALL :FollowURL URL32bit LastRedirectURL32bit
+
+				CALL :DetermineFileExtensionOfURL LastRedirectURL FileExtension
+				CALL :DetermineFileExtensionOfURL LastRedirectURL32bit FileExtension32bit
+
+				REM a => Architecture is 64 bit
+				REM b => File type for 64 bit version is not unknown and not undetermined
+				REM c => File type for 32 bit version is not unknown and not undetermined
+				REM
+				REM Truth table:
+				REM a b c Error    Use b instead of c
+				REM 0 0 0     1                     0
+				REM 0 0 1     0                     0
+				REM 0 1 0     1                     0
+				REM 0 1 1     0                     0
+				REM 1 0 0     1                     0
+				REM 1 0 1     0                     0
+				REM 1 1 0     0                     1
+				REM 1 1 1     0                     1
+				REM To get a formular for the Error variable, we can use a disjunctive normal form:
+				REM Error = (¬a ∧ ¬b ∧ ¬c) ∨ (¬a ∧ b ∧ ¬c) ∨ (a ∧ ¬b ∧ ¬c) <=>
+				REM Error = (¬a ∧ ¬c) ∨ (¬b ∧ ¬c)
+				REM With:
+				REM   ∧ = AND
+				REM   ∨ = OR
+				REM   ¬ = NOT
+				REM In batch:
+				REM SET /A "Error=(!a & !b) | (!b & !c)"
+				REM
+				REM Forumular for when to use the 64 bit version:
+				REM SET /A "CanUse64Bit=a & b"
+
+				SET "_ErrorString=unknown undetermined"
+
+				SET a=0
+				SET b=0
+				SET c=0
+				IF "!Architecture!"=="64" SET "a=1"
+				CALL CALL SET "TmpString=%%%%_ErrorString:%%FileExtension%%=%%%%"
+				CALL CALL SET "TmpString32bit=%%%%_ErrorString:%%FileExtension32bit%%=%%%%"
+				IF "!TmpString!"=="!_ErrorString!" SET "b=1"
+				IF "!TmpString32bit!"=="!_ErrorString!" SET "c=1"
+
+				REM Escaping exclamation points because of DelayedExpansion
+				SET /A "Error=(^!a & ^!c)|(^!b & ^!c)"
+
+				IF "!Error!"=="1" (
+					CALL :ColorEcho ERROR def 1 0 "There was no compatible version found for your machine."
+					CMD /C ^""!DifferentCmdLine!" i "!Name!"^"
+					GOTO :Error
+				)
+
+				SET /A "CanUse64Bit=a & b"
+
+				IF "!CanUse64Bit!"=="1" (
+					CALL :ColorEcho ACTION def 1 0 "Getting 64 bit version of "!Package!"."
+					CALL :Download LastRedirectURL "!TmpDir!\!Name!.!FileExtension!"
+					SET "Extension=!FileExtension!"
+				) ELSE (
+					CALL :ColorEcho ACTION def 1 0 "Getting 32 bit version of "!Package!"."
+					CALL :Download LastRedirectURL32bit "!TmpDir!\!Name!.!FileExtension32bit!"
+					SET "Extension=!FileExtension32bit!"
+				)
+
+				CALL :CreateFolder "!BaseDir!\!Name!"
+
+				IF "!Extension!"=="zip" (
+					CALL :Unzip "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
+				)
+				IF "!Extension!"=="7z" (
+					CALL :Extract7z "!TmpDir!\!Name!.7z" "!BaseDir!\!Name!"
+				)
+				IF "!Extension!"=="exe" (
+					CALL :CheckExeExtractable "!TmpDir!\!Name!.exe" isExtractable
+					IF "!IsExtractable!"=="1" (
+						CALL :ExtractExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
+					) ELSE (
+						CALL :CheckExeInstaller "!TmpDir!\!Name!.exe" isInstaller
+						IF NOT "!IsInstaller!"=="1" (
+							CALL :InstallExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
+						) ELSE (
+							MOVE "!TmpDir!\!Name!.exe" "!BaseDir!\!Name!"
+						)
+					)
+				)
+				IF "!Extension!"=="msi" (
+					CALL :ExtractMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
+					REM Since you can always extract any MSI with windows built-in msiexec-utility, there's no need
+					REM to install any msi. Option to actually install it might be added later
+					REM CALL :InstallMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
+				)
+				IF "!Extension!"=="bat" (
+					MOVE "!TmpDir!\!Name!.bat" "!BaseDir!\!Name!"
+				)
+				IF "!Extension!"=="ahk" (
+					MOVE "!TmpDir!\!Name!.ahk" "!BaseDir!\!Name!"
+				)
+
+				CALL :CreateShortcutWithVbs "!BaseDir!\!Name!!RelPath!" "!RedirectsDir!\!Name!.lnk"
+
+				ENDLOCAL & EXIT /B 0
+			) ELSE (
+				CALL :ColorEcho INFO def 1 1 "!Name! is already installed in "!BaseDir!\!Name!". Use it with "!BaseDir!\!Name!!RelPath!"."
+				ENDLOCAL & EXIT /B 0
+			)
+		)
+	)
+ENDLOCAL
+EXIT /B 1
+
 
 REM ----------------------- ShowInformation -------------------------
 :ShowInformation
@@ -810,10 +819,10 @@ SETLOCAL
 	SET "ReturnVar1=%~2"
 	SET "ReturnVar2=%~3"
 
-	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL "!Curl!" --head --silent --location "!URL!" ^| "!Findstr!" "Content-Length: "') DO (SET "FileSize=%%A")
-	>NUL SET /A "FileSize=FileSize / 1"
-	>NUL SET /A "FileSizeMB=FileSize / 1000000"
-ENDLOCAL & SET "%ReturnVar1%=%FileSize%" & SET "%ReturnVar2%=%FileSizeMB%"
+	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL "!Curl!" --head --silent --location "!URL!" ^| "!Findstr!" "Content-Length: "') DO (SET "_FileSize_=%%A")
+	>NUL SET /A "_FileSize_=_FileSize_ / 1"
+	>NUL SET /A "_FileSizeMB_=_FileSize_ / 1000000"
+ENDLOCAL & SET "%ReturnVar1%=%_FileSize_%" & SET "%ReturnVar2%=%_FileSizeMB_%"
 EXIT /B 0
 
 
@@ -830,7 +839,7 @@ SETLOCAL
 	"!Powershell!" -Command Remove-Item Alias:curl; curl --location --range 0-32 """!URL!""" --output """!TmpFile!""" 2^>^&1 ^| Select-String k ^| Foreach-Object {$data = ^(^([string] $_^).Trim^(^) -Split '\s+'^)[0,1,3,9]; If ^( ^(Invoke-Expression^($data[2].replace^('k','*1000'^).replace^('M','*1000000'^)^)^) -gt 26 ^){ exit }}
 	1>NUL "!Chcp!" 65001
 	IF NOT EXIST "!TmpFile!" (
-		IF NOT "!LastRedirectURL!"=="" CALL :ColorEcho WARNING def 1 0 "File type for URL could not be determined, because there probably was some problem with curl."
+		IF NOT "!LastRedirectURL!"=="" CALL :ColorEcho WARNING def 1 0 "File type for URL "!URL!" could not be determined, because there probably was some problem with curl."
 		SET "FileExtension=undetermined"
 	) ELSE (
 		CALL :DetermineFileExtension "!TmpFile!" FileExtension
