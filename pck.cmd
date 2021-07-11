@@ -180,6 +180,8 @@ SETLOCAL
 	SET "LastRedirectURL="
 	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL curl --silent --location --head -X GET "!URL!" ^| "!Findstr!" "Location: "') DO (SET "LastRedirectURL=%%A")
 	IF NOT DEFINED LastRedirectURL SET "LastRedirectURL=!URL!"
+ENDLOCAL & SET "%ReturnVar1%=%LastRedirectURL%"
+EXIT /B 0
 
 REM ----------------------- ListPackages -------------------------
 :ListPackages
@@ -763,9 +765,6 @@ SETLOCAL
 ENDLOCAL & SET "%ReturnVar1%=%FileExtension%"
 EXIT /B 0
 
-ENDLOCAL & SET "%ReturnVar1%=%LastRedirectURL%"
-EXIT /B 0
-
 REM ------------------------ UpdatePath ------------------------
 :UpdatePath
 SETLOCAL
@@ -995,8 +994,8 @@ SETLOCAL
 	REM                                        /!\   /!\ For some cool reason, you don't need/can't escape these qoutes,
 	REM                                         !     !  maybe because there are no spaces. If you escape them, it won't work as expected.
 	CALL :ColorEcho "" yellow 1 0 "    pck [help]                       # show this help"
-	ENDLOCAL
-	EXIT /B 0
+ENDLOCAL
+EXIT /B 0
 
 REM ------------------------ ParsePackageConfigFile ------------------------
 :ParsePackageConfigFile
@@ -1257,9 +1256,9 @@ EXIT /B 0
 
 REM ------------------------ DefineMacros ------------------------
 :DefineMacros
+SETLOCAL EnableDelayedExpansion
 	REM "  <- This construct is just for better syntax highlighting for Sublime Text
 	REM Must be enabled.
-	SETLOCAL EnableDelayedExpansion
 	SET LF=^
 
 
@@ -1270,7 +1269,7 @@ REM ------------------------ DefineMacros ------------------------
 	SET "$Split="
 	SET "$Trim="
 	SET "$ToLower="
-	ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
+ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
 	REM --------------------- Split Macro ---------------------
 	REM Multiple delimiters are ignored
 	SET $Split=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
