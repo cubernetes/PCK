@@ -1,6 +1,6 @@
 ::bat
 :: PCK Package Manager for Windows
-:: https://github.com/cubernetes/PCK-Package-Manager
+:: https://github.com/cubernetes/PCK
 
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion EnableExtensions
@@ -33,30 +33,7 @@ SETLOCAL
 	REM --------------------------- List packages ---------------------------
 	IF "!Arg1!"=="list" (
 		CALL :WarnAboutIgnoredArgs 3 %*
-		IF DEFINED Arg2 (
-			IF "!Arg2:~0,1!"=="-" (
-				CALL :ColorEcho ERROR def 1 0 "Your regex starts with a minus ("-"). Please escape it using a backslash ("\")."
-				CALL :ColorEcho INFO def 1 0 "The reason for this error is unclear to me, but you know, it's batch."
-				GOTO :Error
-			)
-			CALL :ColorEcho ACTION def 1 1 "Showing all available packages that match the regex `!Arg2!`."
-			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!"  ^| "!Findstr!" /I /R "^^[!AlnumCharClass!]*!Arg2![!AlnumCharClass!]*;" ^| "!Sort!"') DO @(
-				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
-					ECHO - %%~A
-				) ELSE (
-					ECHO %ESC%[32m- %%~A [already installed]%ESC%[0m
-				)
-			)
-		) ELSE (
-			CALL :ColorEcho ACTION def 1 1 "Showing all available packages."
-			FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
-				IF NOT EXIST "!BaseDir!\%%~A%%~B" (
-					ECHO - %%~A
-				) ELSE (
-					ECHO %ESC%[32m- %%~A [already installed]%ESC%[0m
-				)
-			)
-		)
+		CALL :ListPackages "!Arg2!"
 		GOTO :Finish
 	)
 
@@ -456,6 +433,39 @@ SETLOCAL
 ENDLOCAL
 EXIT /B 0
 
+REM ----------------------- ListPackages -------------------------
+:ListPackages
+SETLOCAL
+	SET "Regex=%~1"
+
+	IF DEFINED Regex (
+		IF "!Arg2:~0,1!"=="-" (
+			CALL :ColorEcho ERROR def 1 0 "Your regex starts with a minus ("-"). Please escape it using a backslash ("\")."
+			CALL :ColorEcho INFO def 1 0 "The reason for this error is unclear to me, but you know, it's batch."
+			GOTO :Error
+		)
+		CALL :ColorEcho ACTION def 1 1 "Showing all available packages that match the regex `!Regex!`."
+		FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!"  ^| "!Findstr!" /I /R "^^[!AlnumCharClass!]*!Regex![!AlnumCharClass!]*;" ^| "!Sort!"') DO @(
+			IF NOT EXIST "!BaseDir!\%%~A%%~B" (
+				ECHO - %%~A
+			) ELSE (
+				ECHO %ESC%[32m- %%~A [already installed]%ESC%[0m
+			)
+		)
+	) ELSE (
+		CALL :ColorEcho ACTION def 1 1 "Showing all available packages."
+		FOR /F "TOKENS=1,2 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
+			IF NOT EXIST "!BaseDir!\%%~A%%~B" (
+				ECHO - %%~A
+			) ELSE (
+				ECHO %ESC%[32m- %%~A [already installed]%ESC%[0m
+			)
+		)
+	)
+ENDLOCAL
+EXIT /B 0
+
+REM ----------------------- ShowInformation -------------------------
 :ShowInformation
 SETLOCAL
 	SET "Package=%~1"
@@ -1349,3 +1359,4 @@ REM Get latest Github Releases: (FOR /F "!SKIP! TOKENS=1* DELIMS=: " %A IN ('cur
 REM Save last direct download link in installation folder to check for new (different) version
 REM Sourceforge API /best_release.json
 REM Find programs instead of programworks
+REM new package format
