@@ -4,11 +4,8 @@
 
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion EnableExtensions
-
-CALL :Init "%~1"
-
-CALL :Main "%~0" %*
-
+	CALL :Init "%~1"
+	CALL :Main "%~0" %*
 ENDLOCAL & SET "PATH=%PATH%" & SET "PATHEXT=%PATHEXT%"
 EXIT /B 0
 
@@ -95,7 +92,7 @@ SETLOCAL
 	)
 
 	CALL :ColorEcho WARNING def 1 0 "!FileName! was not found."
-	ENDLOCAL & SET "%ReturnVar1%=%FileName%"
+	ENDLOCAL & SET "%ReturnVar1%=not found"
 	EXIT /B 1
 
 	:Found
@@ -270,9 +267,9 @@ SETLOCAL
 
 				SET "_ErrorString=unknown undetermined"
 
-				SET a=0
-				SET b=0
-				SET c=0
+				SET "a=0"
+				SET "b=0"
+				SET "c=0"
 				IF "!Architecture!"=="64" SET "a=1"
 				CALL CALL SET "TmpString=%%%%_ErrorString:%%FileExtension%%=%%%%"
 				CALL CALL SET "TmpString32bit=%%%%_ErrorString:%%FileExtension32bit%%=%%%%"
@@ -438,10 +435,12 @@ SETLOCAL
 	REM DownloadWithVbs = 1 --> force download with vbs
 	SET "DownloadWithVbs=%~3"
 
-	IF "!Curl!"=="curl"
-	CALL :ProgramWorks "curl"
+	REM untested code
+	IF "!Curl!"=="not found" (
+		SET "CurlNotFound=1"
+	)
 
-	SET /A "Check=^!ERRORLEVEL & ^!DownloadWithVbs"
+	SET /A "Check=^!CurlNotFound & ^!DownloadWithVbs"
 
 	IF "!Check!"=="1" (
 		CALL :ColorEcho ACTION def 1 0 "Downloading !FileName! with curl:"
@@ -526,8 +525,9 @@ SETLOCAL
 	SET "FileName=%~n1"
 	SET "DestFolder=%~2"
 
-	CALL :ProgramWorks "7z"
-	IF NOT "!ERRORLEVEL!"=="0" (
+	REM untested code
+	CALL :GetProgramPath 7z "!BaseDir!\7zip" 7z
+	IF "!7z!"=="not found" (
 		CALL :ColorEcho WARNING def 1 0 "7z was NOT found"
 		CALL :DownloadDependency 7zip
 	)
@@ -538,7 +538,7 @@ SETLOCAL
 		CALL :UnzipWithVbs "!SrcFile!" "!DestFolder!"
 	) ELSE (
 		CALL :ColorEcho ACTION def 1 0 "Unzipping !FileName! with 7z:"
-		7z x -bsp1 -o"!DestFolder!" "!SrcFile!"
+		!7z! x -bsp1 -o"!DestFolder!" "!SrcFile!"
 	)
 
 	SET "ItemCount=0"
@@ -1004,8 +1004,8 @@ SETLOCAL EnableDelayedExpansion
 
 	SET "BEGIN="
 	SET "PackageList="
-	SET j=0
-	SET i=0
+	SET "j=0"
+	SET "i=0"
 	FOR /F "EOL=# DELIMS=" %%A IN ('TYPE "!SrcFile!"') DO (
 		SET "Line=%%~A"
 		REM Macros for speed
@@ -1358,7 +1358,7 @@ REM "
 EXIT /B 0
 
 REM Ideas/TODOs:
-REM Get latest Github Releases: (FOR /F "!SKIP! TOKENS=1* DELIMS=: " %A IN ('curl --silent --location "https://api.github.com/repos/telegramdesktop/tdesktop/releases/latest" ^| "!Findstr!" /R "browser_download_url.*zip"') DO @(IF NOT DEFINED URL SET "URL=%~B")) & ECHO !URL! & SET URL=
+REM Get latest Github Releases: (FOR /F "!SKIP! TOKENS=1* DELIMS=: " %A IN ('curl --silent --location "https://api.github.com/repos/telegramdesktop/tdesktop/releases/latest" ^| "!Findstr!" /R "browser_download_url.*zip"') DO @(IF NOT DEFINED URL SET "URL=%~B")) & ECHO !URL! & SET "URL="
 REM Save last direct download link in installation folder to check for new (different) version
 REM Sourceforge API /best_release.json
 REM Find programs instead of programworks
