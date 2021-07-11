@@ -124,9 +124,9 @@ REM ------------------------ Init ------------------------
 	CALL :UpdatePathExt
 
 	IF DEFINED PROGRAMFILES(X86) (
-	    SET "Architecture=64"
+		SET "Architecture=64"
 	) ELSE (
-	    SET "Architecture=32"
+		SET "Architecture=32"
 	)
 
 	REM Create carriage return character for generating live download info.
@@ -160,23 +160,23 @@ EXIT /B 0
 
 REM ------------------------ DefineMacros ------------------------
 :DefineMacros
-REM "  <- This construct is just for better syntax highlighting for Sublime Text
-REM Must be enabled.
-SETLOCAL EnableDelayedExpansion
-SET LF=^
+	REM "  <- This construct is just for better syntax highlighting for Sublime Text
+	REM Must be enabled.
+	SETLOCAL EnableDelayedExpansion
+	SET LF=^
 
 
-REM Above 2 lines required - do not remove
-SET ^"\n=^^^%LF%%LF%^%LF%%LF%^^"
-REM "
-REM Modified to work with Delayed Expansion enabled or disabled. For macro definition, it must be enabled.
-SET "$Split="
-SET "$Trim="
-SET "$ToLower="
-ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
-REM --------------------- Split Macro ---------------------
-REM Multiple delimiters are ignored
-SET $Split=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
+	REM Above 2 lines required - do not remove
+	SET ^"\n=^^^%LF%%LF%^%LF%%LF%^^"
+	REM "
+	REM Modified to work with Delayed Expansion enabled or disabled. For macro definition, it must be enabled.
+	SET "$Split="
+	SET "$Trim="
+	SET "$ToLower="
+	ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
+	REM --------------------- Split Macro ---------------------
+	REM Multiple delimiters are ignored
+	SET $Split=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
 	FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
 		SET "String=%%!%%J%%!"%\n%
 		SET "String=%%!String:%%K=^^^%%LF%%%%LF%%%%!"%\n%
@@ -201,41 +201,41 @@ ENDLOCAL^&ENDLOCAL^&SET "%%J[len]=%%!i%%!"^)%\n%
 ) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
 REM "
 
-REM --------------------- Trim Macro ---------------------
-REM %$Trim% strVar [charVar] -- macro for trimming both left and right
-REM Source: https://www.dostips.com/forum/viewtopic.php?t=2697
-REM Is set to only strip 3 chars at max
-SET $Trim=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
-  SET "TrimChar= "%\n%
-  FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
-    SET "String=%%!%%J%%!"%\n%
-    IF "%%~K" NEQ "" IF DEFINED %%~K SET "TrimChar=%%!%%K:~0,1%%!"%\n%
-    FOR /L %%i IN ^(1 1 2^) DO SET "TrimChar=%%!TrimChar%%!%%!TrimChar%%!"%\n%
-    SET /A "k=2"%\n%
-    FOR /L %%j IN ^(1 1 2^) DO ^(%\n%
-      IF DEFINED String FOR %%k IN ^(%%!k%%!^) DO ^(%\n%
-        IF "%%!String:~-%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~0,-%%k%%!"%\n%
-        IF "%%!String:~0,%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~%%k%%!"%\n%
-        SET /A "k/=2"%\n%
-      ^)%\n%
-    ^)%\n%
-    IF DEFINED String ^(%\n%
-      IF NOT DEFINED NotDelayed ^(%\n%
-        SET "String=%%!String:^^^=^^^^%%!"%\n%
-        SET "String=%%!String:"=""Q%%!^"%\n%
-        CALL SET "String=%%^^^String:^^^!=""E^^^!%%" %%! %\n%
-        SET "String=%%!String:""E=^^^!"%\n%
-        SET "String=%%!String:""Q="%%!^"%\n%
-      ^)%\n%
-      FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
+	REM --------------------- Trim Macro ---------------------
+	REM %$Trim% strVar [charVar] -- macro for trimming both left and right
+	REM Source: https://www.dostips.com/forum/viewtopic.php?t=2697
+	REM Is set to only strip 3 chars at max
+	SET $Trim=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
+	SET "TrimChar= "%\n%
+	FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
+		SET "String=%%!%%J%%!"%\n%
+		IF "%%~K" NEQ "" IF DEFINED %%~K SET "TrimChar=%%!%%K:~0,1%%!"%\n%
+		FOR /L %%i IN ^(1 1 2^) DO SET "TrimChar=%%!TrimChar%%!%%!TrimChar%%!"%\n%
+		SET /A "k=2"%\n%
+		FOR /L %%j IN ^(1 1 2^) DO ^(%\n%
+			IF DEFINED String FOR %%k IN ^(%%!k%%!^) DO ^(%\n%
+				IF "%%!String:~-%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~0,-%%k%%!"%\n%
+				IF "%%!String:~0,%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~%%k%%!"%\n%
+				SET /A "k/=2"%\n%
+			^)%\n%
+		^)%\n%
+		IF DEFINED String ^(%\n%
+			IF NOT DEFINED NotDelayed ^(%\n%
+				SET "String=%%!String:^^^=^^^^%%!"%\n%
+				SET "String=%%!String:"=""Q%%!^"%\n%
+				CALL SET "String=%%^^^String:^^^!=""E^^^!%%" %%! %\n%
+				SET "String=%%!String:""E=^^^!"%\n%
+				SET "String=%%!String:""Q="%%!^"%\n%
+			^)%\n%
+			FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
 )	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
-  ^)%\n%
+	^)%\n%
 ) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
 REM "
 
-REM ----------------------- ToLower Macro -------------------------
-REM Source: https://www.dostips.com/forum/viewtopic.php?p=8697#p8697
-SET $ToLower=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
+	REM ----------------------- ToLower Macro -------------------------
+	REM Source: https://www.dostips.com/forum/viewtopic.php?p=8697#p8697
+	SET $ToLower=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
 	SET "TrimChar= "%\n%
 	FOR /F %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
 		SET "String=%%!%%J%%! "%\n%
@@ -258,7 +258,7 @@ SET $ToLower=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
 	^)%\n%
 ) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
 ) & SET ^"LF=^%LF%%LF%"
-REM "
+	REM "
 EXIT /B 0
 
 REM ------------------------ ColorEcho ------------------------
@@ -742,7 +742,6 @@ SETLOCAL
 		ENDLOCAL
 		EXIT /B 1
 	)
-
 ENDLOCAL
 EXIT /B 0
 
@@ -1031,23 +1030,23 @@ SETLOCAL
 	SETLOCAL EnableDelayedExpansion
 	SET "Die="
 	IF NOT DEFINED %1 (
-	    CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" is not defined."
-	    SET "Die=1"
+		CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" is not defined."
+		SET "Die=1"
 	) ELSE (
 		SET "Str=!%1!"
 	)
 
 	IF NOT DEFINED Die FOR %%L IN ("!LF!") DO (
 		IF "!Str!" NEQ "!Str:%%~L=!" (
-		    CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" contains linefeeds."
-		    SET "Die=1"
+			CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" contains linefeeds."
+			SET "Die=1"
 		)
 	)
 
 	IF NOT DEFINED Die FOR %%C IN ("!CR!") DO (
 		IF "!Str!" NEQ "!Str:%%~C=!" (
-		    CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" contains carriage returns."
-		    SET "Die=1"
+			CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" contains carriage returns."
+			SET "Die=1"
 		)
 	)
 
@@ -1055,8 +1054,8 @@ SETLOCAL
 
 	(FOR /F EOL^= %%A IN ("!Str!") DO REM NOP
 	) || (
-	    CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" consists entirely of whitespace."
-	    ENDLOCAL & ENDLOCAL & SET "%2=" & EXIT /B 0
+		CALL :ColorEcho WARNING def 1 0 "Trimming failed, because variable "%1" consists entirely of whitespace."
+		ENDLOCAL & ENDLOCAL & SET "%2=" & EXIT /B 0
 	)
 
 	SET "Str=!Str:^=^^^^!"
@@ -1070,7 +1069,7 @@ SETLOCAL
 	SET "Str=!Str:""="!"
 
 	FOR /F TOKENS^=*^ EOL^= %%A IN ("!Str!") DO (
-	    ENDLOCAL & ENDLOCAL & SET "%2=%%A" !
+		ENDLOCAL & ENDLOCAL & SET "%2=%%A" !
 	)
 EXIT /B 0
 
@@ -1225,7 +1224,6 @@ SETLOCAL
 	ENDLOCAL
 	EXIT /B 0
 
-
 REM ------------------------ ParsePackageConfigFile ------------------------
 :ParsePackageConfigFile
 SETLOCAL EnableDelayedExpansion
@@ -1361,7 +1359,6 @@ SETLOCAL
 	>"!TmpDir!\ExitBatchYes.txt" ECHO !Yes!
 ENDLOCAL
 EXIT /B 0
-
 
 REM Ideas/TODOs:
 REM Get latest Github Releases: (FOR /F "!SKIP! TOKENS=1* DELIMS=: " %A IN ('curl --silent --location "https://api.github.com/repos/telegramdesktop/tdesktop/releases/latest" ^| "!Findstr!" /R "browser_download_url.*zip"') DO @(IF NOT DEFINED URL SET "URL=%~B")) & ECHO !URL! & SET URL=
