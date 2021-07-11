@@ -12,255 +12,6 @@ CALL :Main "%~0" %*
 ENDLOCAL & SET "PATH=%PATH%" & SET "PATHEXT=%PATHEXT%"
 EXIT /B 0
 
-REM ------------------------ Main ------------------------
-:Main
-SETLOCAL
-	SET "Arg1=%~2"
-	SET "Arg2=%~3"
-	SET "Arg3=%~4"
-	SET "Arg4=%~5"
-	%$ToLower% Arg1
-	%$ToLower% Arg2
-	%$ToLower% Arg3
-	%$ToLower% Arg4
-
-	IF "!Arg1!"=="help" (
-		CALL :WarnAboutIgnoredArgs 2 %*
-		CALL :ShowHelp
-		GOTO :Finish
-	) ELSE IF NOT DEFINED Arg1 (
-		CALL :ShowHelp
-		GOTO :Finish
-	)
-
-	IF "!Arg1!"=="list" (
-		CALL :WarnAboutIgnoredArgs 3 %*
-		CALL :ListPackages Arg2
-		GOTO :Finish
-	)
-
-	IF "!Arg1!"=="i" (
-		CALL :WarnAboutIgnoredArgs 4 %*
-		CALL :ShowInformation "!Arg2!" "!Arg3!"
-		GOTO :Finish
-	)
-
-	IF "!Arg1!"=="r" (
-		CALL :WarnAboutIgnoredArgs 3 %*
-		CALL :ColorEcho INFO def 1 1 "This functionality will uninstall a package."
-		GOTO :Finish
-	)
-
-	IF "!Arg1!"=="u" (
-		CALL :WarnAboutIgnoredArgs 4 %*
-		CALL :ColorEcho INFO def 1 1 "This functionality will update a package's link if possible."
-		GOTO :Finish
-	)
-
-	IF "!Arg1!"=="a" (
-		CALL :WarnAboutIgnoredArgs 4 %*
-		CALL :ColorEcho INFO def 1 1 "This functionality will add a package to the list if possible."
-		GOTO :Finish
-	)
-
-	CALL :InstallPackage "!Arg2!"
-	IF "!ERRORLEVEL!"=="1" (
-		CALL :ColorEcho ERROR def 1 0 "That package does not exist"
-		GOTO :Error
-	)
-
-
-	:Finish
-	CALL :Cleanup "%~0"
-ENDLOCAL
-EXIT /B 0
-
-REM ------------------------ Init ------------------------
-:Init
-	SET "Arg1=%~1"
-
-	SET "System32=!SystemRoot!\System32"
-
-	REM Source: https://stackoverflow.com/a/59874436
-	REM Create escape character for ANSI escape sequences.
-	REM Only line of code where the part after DO can not be in paranthesis.
-	FOR /F "DELIMS=#" %%E IN ('"PROMPT #$E# & FOR %%E IN (1) DO REM"') DO (SET "ESC=%%E")
-
-	CALL :GetProgramPath where "!System32!" Where
-	CALL :GetProgramPath chcp "!System32!" Chcp
-	CALL :GetProgramPath sort "!System32!" Sort
-	CALL :GetProgramPath findstr "!System32!" Findstr
-	CALL :GetProgramPath cscript "!System32!" Cscript
-	CALL :GetProgramPath replace "!System32!" Replace
-
-	FOR /F "TOKENS=3 DELIMS=. " %%A IN ('^""!Chcp!"^"') DO (SET "OldCodePage=%%A")
-
-	1>NUL "!Chcp!" 1252
-	CALL :GetProgramPath powershell "!System32!\WindowsPowerShell\v1.0" Powershell
-	1>NUL "!Chcp!" 65001
-
-	REM Remove trailing backslash "\"
-	REM Source: https://stackoverflow.com/a/60414485/13823467
-	FOR %%A IN ("%~dp0\..") DO (SET "BaseDir=%%~fA")
-	FOR %%A IN ("%~dp0\.") DO (SET "PckDir=%%~fA")
-
-	SET "RedirectsDir=!BaseDir!\Redirects"
-	SET "TmpDir=!BaseDir!\tmp"
-
-	CALL :CreateFolder "!RedirectsDir!"
-	CALL :CreateFolder "!TmpDir!"
-
-	SET "PackagesFilePath=!PckDir!\packages.csv"
-
-	SET SingleQuote="
-	REM "
-	SET "DifferentCmdLine=!PckDir!\.\%~nx0"
-
-	SET "Verbose=1"
-
-	CALL :DefineMacros
-
-	CALL :UpdatePath
-	CALL :UpdatePathExt
-
-	IF DEFINED PROGRAMFILES(X86) (
-		SET "Architecture=64"
-	) ELSE (
-		SET "Architecture=32"
-	)
-
-	REM Create carriage return character for generating live download info.
-	SET "CR=" & IF NOT DEFINED CR FOR /F "SKIP=1" %%C IN ('ECHO(^|!Replace! ? . /W /U') DO (SET "CR=%%C")
-
-	REM Needed for live download info.
-	SET "WhiteSpaceBuffer=                                      "
-
-	REM For regex
-	SET "AlnumCharClass=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	CALL :CreateShortcutWithVbs "!BaseDir!" "!RedirectsDir!\spck.lnk"
-
-	REM Curl is needed for various tasks like fetching information for the packages,
-	REM determining the file sizes or determining the file types/extensions.
-
-	%$ToLower% Arg1
-	IF NOT "!Arg1!"=="curl" (
-		IF NOT "!Arg1!"=="7zip" (
-			CALL :GetProgramPath curl "!System32!" Curl
-			IF "!Curl!"=="curl" (
-				CALL :DownloadDependency curl
-			)
-		)
-	)
-
-	REM For future releases, might never be implemented, since downloading files with VBScript is way more bulletproof than with bitsadmin.
-	REM Commented out for now because it takes long sometimes.
-	REM 1>NUL 2>&1 bitsadmin.exe /complete downloadFile
-EXIT /B 0
-
-REM ------------------------ DefineMacros ------------------------
-:DefineMacros
-	REM "  <- This construct is just for better syntax highlighting for Sublime Text
-	REM Must be enabled.
-	SETLOCAL EnableDelayedExpansion
-	SET LF=^
-
-
-	REM Above 2 lines required - do not remove
-	SET ^"\n=^^^%LF%%LF%^%LF%%LF%^^"
-	REM "
-	REM Modified to work with Delayed Expansion enabled or disabled. For macro definition, it must be enabled.
-	SET "$Split="
-	SET "$Trim="
-	SET "$ToLower="
-	ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
-	REM --------------------- Split Macro ---------------------
-	REM Multiple delimiters are ignored
-	SET $Split=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
-	FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
-		SET "String=%%!%%J%%!"%\n%
-		SET "String=%%!String:%%K=^^^%%LF%%%%LF%%%%!"%\n%
-		SET "i=0"%\n%
-		SET ReturnString=ENDLOCAL%\n%
-		FOR /F "DELIMS=" %%A IN ^(%\n%
-			'ECHO %%!String%%!'^) DO ^(%\n%
-			SET "Line=%%A"%\n%
-			IF DEFINED Line ^(%\n%
-				IF NOT DEFINED NotDelayed ^(%\n%
-					SET "Line=%%!Line:^^^=^^^^%%!"%\n%
-					SET "Line=%%!Line:"=""Q%%!^"%\n%
-					CALL SET "Line=%%^^^Line:^^^!=""E^^^!%%" %%! %\n%
-					SET "Line=%%!Line:""E=^^^!"%\n%
-					SET "Line=%%!Line:""Q="%%!^"%\n%
-				^)%\n%
-				FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ TOKENS^^^^=^^^^1*^^^^ DELIMS^^^^=\^^^^^" %%k IN ^("%%!i%%!\%%!Line%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J[%%~k]=%%~l"%%!%\n%
-)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J[%%!i%%!]="%\n%
-SET /A "i+=1"%\n%
-SETLOCAL^&SETLOCAL EnableDelayedExpansion^)%\n%
-ENDLOCAL^&ENDLOCAL^&SET "%%J[len]=%%!i%%!"^)%\n%
-) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
-REM "
-
-	REM --------------------- Trim Macro ---------------------
-	REM %$Trim% strVar [charVar] -- macro for trimming both left and right
-	REM Source: https://www.dostips.com/forum/viewtopic.php?t=2697
-	REM Is set to only strip 3 chars at max
-	SET $Trim=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
-	SET "TrimChar= "%\n%
-	FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
-		SET "String=%%!%%J%%!"%\n%
-		IF "%%~K" NEQ "" IF DEFINED %%~K SET "TrimChar=%%!%%K:~0,1%%!"%\n%
-		FOR /L %%i IN ^(1 1 2^) DO SET "TrimChar=%%!TrimChar%%!%%!TrimChar%%!"%\n%
-		SET /A "k=2"%\n%
-		FOR /L %%j IN ^(1 1 2^) DO ^(%\n%
-			IF DEFINED String FOR %%k IN ^(%%!k%%!^) DO ^(%\n%
-				IF "%%!String:~-%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~0,-%%k%%!"%\n%
-				IF "%%!String:~0,%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~%%k%%!"%\n%
-				SET /A "k/=2"%\n%
-			^)%\n%
-		^)%\n%
-		IF DEFINED String ^(%\n%
-			IF NOT DEFINED NotDelayed ^(%\n%
-				SET "String=%%!String:^^^=^^^^%%!"%\n%
-				SET "String=%%!String:"=""Q%%!^"%\n%
-				CALL SET "String=%%^^^String:^^^!=""E^^^!%%" %%! %\n%
-				SET "String=%%!String:""E=^^^!"%\n%
-				SET "String=%%!String:""Q="%%!^"%\n%
-			^)%\n%
-			FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
-)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
-	^)%\n%
-) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
-REM "
-
-	REM ----------------------- ToLower Macro -------------------------
-	REM Source: https://www.dostips.com/forum/viewtopic.php?p=8697#p8697
-	SET $ToLower=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
-	SET "TrimChar= "%\n%
-	FOR /F %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
-		SET "String=%%!%%J%%! "%\n%
-		FOR %%A IN ^(%\n%
-			"A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j"%\n%
-			"K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t"%\n%
-			"U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z" "Ö=ö" "Ä=ä" "Ü=ü"%\n%
-		^) DO ^(SET "String=%%!String:%%~A%%!"^)%\n%
-		SET "String=%%!String:~,-1%%!"%\n%
-		IF DEFINED String ^(%\n%
-			IF NOT DEFINED NotDelayed ^(%\n%
-				SET "String=%%!String:^^^=^^^^%%!"%\n%
-				SET "String=%%!String:"=""Q%%!^"%\n%
-				CALL SET "String=%%^^^String:^^^!=""E^^^!%%" %%! %\n%
-				SET "String=%%!String:""E=^^^!"%\n%
-				SET "String=%%!String:""Q="%%!^"%\n%
-			^)%\n%
-			FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
-)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
-	^)%\n%
-) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
-) & SET ^"LF=^%LF%%LF%"
-	REM "
-EXIT /B 0
-
 REM ------------------------ ColorEcho ------------------------
 :ColorEcho
 SETLOCAL
@@ -309,6 +60,126 @@ SETLOCAL
 	)
 ENDLOCAL
 EXIT /B 0
+
+REM ----------------------- GetProgramPath -----------------------
+:GetProgramPath
+SETLOCAL
+	SET "FileName=%~1"
+	SET "DefaultLocation=%~2"
+	SET "ReturnVar1=%~3"
+
+	IF EXIST "!System32!\where.exe" (
+		SET "Where="!System32!\where.exe""
+	) ELSE (
+		FOR /F "DELIMS=" %%A IN (
+			'2^>NUL where where'
+		) DO (
+			SET "Where="%%~A""
+			GOTO :Continue
+		)
+	)
+
+	:Continue
+	SET "ProgramPath="
+	FOR /F "DELIMS=" %%A IN (
+		'2^>NUL "!Where!" "!DefaultLocation!":"!FileName!"'
+	) DO (
+		SET "ProgramPath=%%~A"
+		GOTO :Found
+	)
+	FOR /F "DELIMS=" %%A IN (
+		'2^>NUL "!Where!" "!FileName!"'
+	) DO (
+		SET "ProgramPath=%%~A"
+		GOTO :Found
+	)
+
+	CALL :ColorEcho WARNING def 1 0 "!FileName! was not found."
+	ENDLOCAL & SET "%ReturnVar1%=%FileName%"
+	EXIT /B 1
+
+	:Found
+ENDLOCAL & SET "%ReturnVar1%=%ProgramPath%"
+EXIT /B 0
+
+REM ------------------------ WarnAboutIgnoredArgs ------------------------
+:WarnAboutIgnoredArgs
+SETLOCAL
+	SET "MaxNumberOfArgs=%~1"
+	SET "ExtraArgs= "
+	SET "Command=%~2"
+	SET "CommandWithArgs=!Command!"
+	SHIFT
+	SHIFT
+	SET "NumberOfArgs=0"
+	FOR /L %%A IN (1,1,50) DO (
+		CALL SET "ShiftedArg=%%1"
+		IF "!ShiftedArg!"=="" (
+			GOTO :NoArgsAnymore
+		)
+		SET /A "NumberOfArgs+=1"
+		SHIFT
+		CALL CALL SET "CommandWithArgs=!CommandWithArgs! %%%%0"
+		IF !NumberOfArgs! GTR !MaxNumberOfArgs! (
+			CALL CALL SET "ExtraArgs=!ExtraArgs! %%%%0"
+		)
+	)
+	CALL :ColorEcho WARNING def 1 0 "You specified 50 or more args to the command !Command!."
+
+	:NoArgsAnymore
+	SET "ExtraArgs=!ExtraArgs:~2!"
+	%$Trim% CommandWithArgs SingleQuote
+	%$ToLower% ExtraArgs
+	%$ToLower% CommandWithArgs
+	IF !NumberOfArgs! GTR !MaxNumberOfArgs! (
+		SET /A "Difference=NumberOfArgs - MaxNumberOfArgs"
+		IF "!Difference!"=="1" (
+			CALL :ColorEcho WARNING def 1 0 "The last argument (`!ExtraArgs!`) in the command `!CommandWithArgs!` was ignored."
+		) ELSE (
+			CALL :ColorEcho WARNING def 1 0 "The last !Difference! arguments (`!ExtraArgs!`) in the command `!CommandWithArgs!` were ignored."
+		)
+		ENDLOCAL
+		EXIT /B 1
+	)
+ENDLOCAL
+EXIT /B 0
+
+REM ------------------------ Error ------------------------
+REM Source: https://stackoverflow.com/a/61782349
+:Error - Cleanly exit batch processing, regardless how many CALLs
+	CALL :ColorEcho "" white 1 0 ""
+	CALL :Cleanup "%0"
+	CALL :ColorEcho ACTION def 1 0 "Exiting."
+	IF NOT EXIST "!TEMP!\ExitBatchYes.txt" CALL :BuildYes
+	1>NUL 2>&1 <"!TEMP!\ExitBatchYes.txt" CALL :CtrlC
+
+:CtrlC
+CMD /C EXIT -1073741510
+
+:BuildYes - Establish a Yes file for the language used by the OS
+SETLOCAL
+	SET "Yes="
+	1>NUL COPY NUL "!TmpDir!\ExitBatchYes.txt"
+	FOR /F "DELIMS=(/ TOKENS=2" %%Y IN ('^<NUL COPY /-Y NUL "!TmpDir!\ExitBatchYes.txt"') DO (
+		IF NOT DEFINED Yes (
+			SET "Yes=%%Y"
+		)
+	)
+	>"!TmpDir!\ExitBatchYes.txt" ECHO !Yes!
+ENDLOCAL
+EXIT /B 0
+
+REM ------------------------ FollowURL ------------------------
+:FollowURL
+SETLOCAL
+	REM URL can't be passed literally, but must be passed as the variable name that contains the URL.
+	REM Must be done this way to prevent percent doubling.
+	SET "URL=!%~1!"
+	SET "ReturnVar1=%~2"
+
+	SET "LastRedirectURL="
+	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL curl --silent --location --head -X GET "!URL!" ^| "!Findstr!" "Location: "') DO (SET "LastRedirectURL=%%A")
+	IF NOT DEFINED LastRedirectURL SET "LastRedirectURL=!URL!"
 
 REM ----------------------- ListPackages -------------------------
 :ListPackages
@@ -473,7 +344,6 @@ SETLOCAL
 ENDLOCAL
 EXIT /B 1
 
-
 REM ----------------------- ShowInformation -------------------------
 :ShowInformation
 SETLOCAL
@@ -566,6 +436,7 @@ SETLOCAL
 	REM DownloadWithVbs = 1 --> force download with vbs
 	SET "DownloadWithVbs=%~3"
 
+	IF "!Curl!"=="curl"
 	CALL :ProgramWorks "curl"
 
 	SET /A "Check=^!ERRORLEVEL & ^!DownloadWithVbs"
@@ -824,7 +695,6 @@ SETLOCAL
 ENDLOCAL & SET "%ReturnVar1%=%_FileSize_%" & SET "%ReturnVar2%=%_FileSizeMB_%"
 EXIT /B 0
 
-
 REM ------------------------ DetermineFileExtensionOfURL ------------------------
 :DetermineFileExtensionOfURL
 SETLOCAL
@@ -892,18 +762,6 @@ SETLOCAL
 	:Finish2
 ENDLOCAL & SET "%ReturnVar1%=%FileExtension%"
 EXIT /B 0
-
-REM ------------------------ FollowURL ------------------------
-:FollowURL
-SETLOCAL
-	REM URL can't be passed literally, but must be passed as the variable name that contains the URL.
-	REM Must be done this way to prevent percent doubling.
-	SET "URL=!%~1!"
-	SET "ReturnVar1=%~2"
-
-	SET "LastRedirectURL="
-	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL curl --silent --location --head -X GET "!URL!" ^| "!Findstr!" "Location: "') DO (SET "LastRedirectURL=%%A")
-	IF NOT DEFINED LastRedirectURL SET "LastRedirectURL=!URL!"
 
 ENDLOCAL & SET "%ReturnVar1%=%LastRedirectURL%"
 EXIT /B 0
@@ -1014,7 +872,6 @@ SETLOCAL
 	FOR /F "TOKENS=1*" %%A IN ("%*") DO (ENDLOCAL & SET "%1=%%B")
 EXIT /B 0
 
-
 REM ------------------------ Trim ------------------------
 REM Source: https://stackoverflow.com/a/48050848/13823467
 :Trim
@@ -1104,47 +961,6 @@ SETLOCAL
 ENDLOCAL & SET "%ReturnVar1%=ReturnValue"
 EXIT /B 0
 
-REM ----------------------- GetProgramPath -----------------------
-:GetProgramPath
-SETLOCAL
-	SET "FileName=%~1"
-	SET "DefaultLocation=%~2"
-	SET "ReturnVar1=%~3"
-
-	IF EXIST "!System32!\where.exe" (
-		SET "Where="!System32!\where.exe""
-	) ELSE (
-		FOR /F "DELIMS=" %%A IN (
-			'2^>NUL where where'
-		) DO (
-			SET "Where="%%~A""
-			GOTO :Continue
-		)
-	)
-
-	:Continue
-	SET "ProgramPath="
-	FOR /F "DELIMS=" %%A IN (
-		'2^>NUL "!Where!" "!DefaultLocation!":"!FileName!"'
-	) DO (
-		SET "ProgramPath=%%~A"
-		GOTO :Found
-	)
-	FOR /F "DELIMS=" %%A IN (
-		'2^>NUL "!Where!" "!FileName!"'
-	) DO (
-		SET "ProgramPath=%%~A"
-		GOTO :Found
-	)
-
-	CALL :ColorEcho WARNING def 1 0 "!FileName! was not found."
-	ENDLOCAL & SET "%ReturnVar1%=%FileName%"
-	EXIT /B 1
-
-	:Found
-ENDLOCAL & SET "%ReturnVar1%=%ProgramPath%"
-EXIT /B 0
-
 REM ------------------------ ProgramWorks ------------------------
 :ProgramWorks
 SETLOCAL
@@ -1164,48 +980,6 @@ SETLOCAL
 	)
 ENDLOCAL
 EXIT /B 1
-
-REM ------------------------ WarnAboutIgnoredArgs ------------------------
-:WarnAboutIgnoredArgs
-SETLOCAL
-	SET "MaxNumberOfArgs=%~1"
-	SET "ExtraArgs= "
-	SET "Command=%~2"
-	SET "CommandWithArgs=!Command!"
-	SHIFT
-	SHIFT
-	SET "NumberOfArgs=0"
-	FOR /L %%A IN (1,1,50) DO (
-		CALL SET "ShiftedArg=%%1"
-		IF "!ShiftedArg!"=="" (
-			GOTO :NoArgsAnymore
-		)
-		SET /A "NumberOfArgs+=1"
-		SHIFT
-		CALL CALL SET "CommandWithArgs=!CommandWithArgs! %%%%0"
-		IF !NumberOfArgs! GTR !MaxNumberOfArgs! (
-			CALL CALL SET "ExtraArgs=!ExtraArgs! %%%%0"
-		)
-	)
-	CALL :ColorEcho WARNING def 1 0 "You specified 50 or more args to the command !Command!."
-
-	:NoArgsAnymore
-	SET "ExtraArgs=!ExtraArgs:~2!"
-	%$Trim% CommandWithArgs SingleQuote
-	%$ToLower% ExtraArgs
-	%$ToLower% CommandWithArgs
-	IF !NumberOfArgs! GTR !MaxNumberOfArgs! (
-		SET /A "Difference=NumberOfArgs - MaxNumberOfArgs"
-		IF "!Difference!"=="1" (
-			CALL :ColorEcho WARNING def 1 0 "The last argument (`!ExtraArgs!`) in the command `!CommandWithArgs!` was ignored."
-		) ELSE (
-			CALL :ColorEcho WARNING def 1 0 "The last !Difference! arguments (`!ExtraArgs!`) in the command `!CommandWithArgs!` were ignored."
-		)
-		ENDLOCAL
-		EXIT /B 1
-	)
-ENDLOCAL
-EXIT /B 0
 
 REM ------------------------ ShowHelp ------------------------
 :ShowHelp
@@ -1335,29 +1109,253 @@ SETLOCAL
 ENDLOCAL
 EXIT /B 0
 
-REM ------------------------ Error ------------------------
-REM Source: https://stackoverflow.com/a/61782349
-:Error - Cleanly exit batch processing, regardless how many CALLs
-	CALL :ColorEcho "" white 1 0 ""
-	CALL :Cleanup "%0"
-	CALL :ColorEcho ACTION def 1 0 "Exiting."
-	IF NOT EXIST "!TEMP!\ExitBatchYes.txt" CALL :BuildYes
-	1>NUL 2>&1 <"!TEMP!\ExitBatchYes.txt" CALL :CtrlC
+REM ------------------------ Init ------------------------
+:Init
+	SET "Arg1=%~1"
 
-:CtrlC
-CMD /C EXIT -1073741510
+	SET "System32=!SystemRoot!\System32"
 
-:BuildYes - Establish a Yes file for the language used by the OS
-SETLOCAL
-	SET "Yes="
-	1>NUL COPY NUL "!TmpDir!\ExitBatchYes.txt"
-	FOR /F "DELIMS=(/ TOKENS=2" %%Y IN ('^<NUL COPY /-Y NUL "!TmpDir!\ExitBatchYes.txt"') DO (
-		IF NOT DEFINED Yes (
-			SET "Yes=%%Y"
+	REM Source: https://stackoverflow.com/a/59874436
+	REM Create escape character for ANSI escape sequences.
+	REM Only line of code where the part after DO can not be in paranthesis.
+	FOR /F "DELIMS=#" %%E IN ('"PROMPT #$E# & FOR %%E IN (1) DO REM"') DO (SET "ESC=%%E")
+
+	CALL :GetProgramPath where "!System32!" Where
+	CALL :GetProgramPath chcp "!System32!" Chcp
+	CALL :GetProgramPath sort "!System32!" Sort
+	CALL :GetProgramPath findstr "!System32!" Findstr
+	CALL :GetProgramPath cscript "!System32!" Cscript
+	CALL :GetProgramPath replace "!System32!" Replace
+
+	FOR /F "TOKENS=3 DELIMS=. " %%A IN ('^""!Chcp!"^"') DO (SET "OldCodePage=%%A")
+
+	1>NUL "!Chcp!" 1252
+	CALL :GetProgramPath powershell "!System32!\WindowsPowerShell\v1.0" Powershell
+	1>NUL "!Chcp!" 65001
+
+	REM Remove trailing backslash "\"
+	REM Source: https://stackoverflow.com/a/60414485/13823467
+	FOR %%A IN ("%~dp0\..") DO (SET "BaseDir=%%~fA")
+	FOR %%A IN ("%~dp0\.") DO (SET "PckDir=%%~fA")
+
+	SET "RedirectsDir=!BaseDir!\Redirects"
+	SET "TmpDir=!BaseDir!\tmp"
+
+	CALL :CreateFolder "!RedirectsDir!"
+	CALL :CreateFolder "!TmpDir!"
+
+	SET "PackagesFilePath=!PckDir!\packages.csv"
+
+	SET SingleQuote="
+	REM "
+	SET "DifferentCmdLine=!PckDir!\.\%~nx0"
+
+	SET "Verbose=1"
+
+	CALL :DefineMacros
+
+	CALL :UpdatePath
+	CALL :UpdatePathExt
+
+	IF DEFINED PROGRAMFILES(X86) (
+		SET "Architecture=64"
+	) ELSE (
+		SET "Architecture=32"
+	)
+
+	REM Create carriage return character for generating live download info.
+	SET "CR=" & IF NOT DEFINED CR FOR /F "SKIP=1" %%C IN ('ECHO(^|!Replace! ? . /W /U') DO (SET "CR=%%C")
+
+	REM Needed for live download info.
+	SET "WhiteSpaceBuffer=                                      "
+
+	REM For regex
+	SET "AlnumCharClass=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	CALL :CreateShortcutWithVbs "!BaseDir!" "!RedirectsDir!\spck.lnk"
+
+	REM Curl is needed for various tasks like fetching information for the packages,
+	REM determining the file sizes or determining the file types/extensions.
+
+	%$ToLower% Arg1
+	IF NOT "!Arg1!"=="curl" (
+		IF NOT "!Arg1!"=="7zip" (
+			CALL :GetProgramPath curl "!System32!" Curl
+			IF "!Curl!"=="curl" (
+				CALL :DownloadDependency curl
+			)
 		)
 	)
-	>"!TmpDir!\ExitBatchYes.txt" ECHO !Yes!
+
+	REM For future releases, might never be implemented, since downloading files with VBScript is way more bulletproof than with bitsadmin.
+	REM Commented out for now because it takes long sometimes.
+	REM 1>NUL 2>&1 bitsadmin.exe /complete downloadFile
+EXIT /B 0
+
+REM ------------------------ Main ------------------------
+:Main
+SETLOCAL
+	SET "Arg1=%~2"
+	SET "Arg2=%~3"
+	SET "Arg3=%~4"
+	SET "Arg4=%~5"
+	%$ToLower% Arg1
+	%$ToLower% Arg2
+	%$ToLower% Arg3
+	%$ToLower% Arg4
+
+	IF "!Arg1!"=="help" (
+		CALL :WarnAboutIgnoredArgs 2 %*
+		CALL :ShowHelp
+		GOTO :Finish
+	) ELSE IF NOT DEFINED Arg1 (
+		CALL :ShowHelp
+		GOTO :Finish
+	)
+
+	IF "!Arg1!"=="list" (
+		CALL :WarnAboutIgnoredArgs 3 %*
+		CALL :ListPackages Arg2
+		GOTO :Finish
+	)
+
+	IF "!Arg1!"=="i" (
+		CALL :WarnAboutIgnoredArgs 4 %*
+		CALL :ShowInformation "!Arg2!" "!Arg3!"
+		GOTO :Finish
+	)
+
+	IF "!Arg1!"=="r" (
+		CALL :WarnAboutIgnoredArgs 3 %*
+		CALL :ColorEcho INFO def 1 1 "This functionality will uninstall a package."
+		GOTO :Finish
+	)
+
+	IF "!Arg1!"=="u" (
+		CALL :WarnAboutIgnoredArgs 4 %*
+		CALL :ColorEcho INFO def 1 1 "This functionality will update a package's link if possible."
+		GOTO :Finish
+	)
+
+	IF "!Arg1!"=="a" (
+		CALL :WarnAboutIgnoredArgs 4 %*
+		CALL :ColorEcho INFO def 1 1 "This functionality will add a package to the list if possible."
+		GOTO :Finish
+	)
+
+	CALL :InstallPackage "!Arg2!"
+	IF "!ERRORLEVEL!"=="1" (
+		CALL :ColorEcho ERROR def 1 0 "That package does not exist"
+		GOTO :Error
+	)
+
+
+	:Finish
+	CALL :Cleanup "%~0"
 ENDLOCAL
+EXIT /B 0
+
+REM ------------------------ DefineMacros ------------------------
+:DefineMacros
+	REM "  <- This construct is just for better syntax highlighting for Sublime Text
+	REM Must be enabled.
+	SETLOCAL EnableDelayedExpansion
+	SET LF=^
+
+
+	REM Above 2 lines required - do not remove
+	SET ^"\n=^^^%LF%%LF%^%LF%%LF%^^"
+	REM "
+	REM Modified to work with Delayed Expansion enabled or disabled. For macro definition, it must be enabled.
+	SET "$Split="
+	SET "$Trim="
+	SET "$ToLower="
+	ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
+	REM --------------------- Split Macro ---------------------
+	REM Multiple delimiters are ignored
+	SET $Split=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
+	FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
+		SET "String=%%!%%J%%!"%\n%
+		SET "String=%%!String:%%K=^^^%%LF%%%%LF%%%%!"%\n%
+		SET "i=0"%\n%
+		SET ReturnString=ENDLOCAL%\n%
+		FOR /F "DELIMS=" %%A IN ^(%\n%
+			'ECHO %%!String%%!'^) DO ^(%\n%
+			SET "Line=%%A"%\n%
+			IF DEFINED Line ^(%\n%
+				IF NOT DEFINED NotDelayed ^(%\n%
+					SET "Line=%%!Line:^^^=^^^^%%!"%\n%
+					SET "Line=%%!Line:"=""Q%%!^"%\n%
+					CALL SET "Line=%%^^^Line:^^^!=""E^^^!%%" %%! %\n%
+					SET "Line=%%!Line:""E=^^^!"%\n%
+					SET "Line=%%!Line:""Q="%%!^"%\n%
+				^)%\n%
+				FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ TOKENS^^^^=^^^^1*^^^^ DELIMS^^^^=\^^^^^" %%k IN ^("%%!i%%!\%%!Line%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J[%%~k]=%%~l"%%!%\n%
+)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J[%%!i%%!]="%\n%
+SET /A "i+=1"%\n%
+SETLOCAL^&SETLOCAL EnableDelayedExpansion^)%\n%
+ENDLOCAL^&ENDLOCAL^&SET "%%J[len]=%%!i%%!"^)%\n%
+) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
+REM "
+
+	REM --------------------- Trim Macro ---------------------
+	REM %$Trim% strVar [charVar] -- macro for trimming both left and right
+	REM Source: https://www.dostips.com/forum/viewtopic.php?t=2697
+	REM Is set to only strip 3 chars at max
+	SET $Trim=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
+	SET "TrimChar= "%\n%
+	FOR /F "TOKENS=1,2" %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
+		SET "String=%%!%%J%%!"%\n%
+		IF "%%~K" NEQ "" IF DEFINED %%~K SET "TrimChar=%%!%%K:~0,1%%!"%\n%
+		FOR /L %%i IN ^(1 1 2^) DO SET "TrimChar=%%!TrimChar%%!%%!TrimChar%%!"%\n%
+		SET /A "k=2"%\n%
+		FOR /L %%j IN ^(1 1 2^) DO ^(%\n%
+			IF DEFINED String FOR %%k IN ^(%%!k%%!^) DO ^(%\n%
+				IF "%%!String:~-%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~0,-%%k%%!"%\n%
+				IF "%%!String:~0,%%k%%!"=="%%!TrimChar:~-%%k%%!" SET "String=%%!String:~%%k%%!"%\n%
+				SET /A "k/=2"%\n%
+			^)%\n%
+		^)%\n%
+		IF DEFINED String ^(%\n%
+			IF NOT DEFINED NotDelayed ^(%\n%
+				SET "String=%%!String:^^^=^^^^%%!"%\n%
+				SET "String=%%!String:"=""Q%%!^"%\n%
+				CALL SET "String=%%^^^String:^^^!=""E^^^!%%" %%! %\n%
+				SET "String=%%!String:""E=^^^!"%\n%
+				SET "String=%%!String:""Q="%%!^"%\n%
+			^)%\n%
+			FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
+)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
+	^)%\n%
+) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
+REM "
+
+	REM ----------------------- ToLower Macro -------------------------
+	REM Source: https://www.dostips.com/forum/viewtopic.php?p=8697#p8697
+	SET $ToLower=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
+	SET "TrimChar= "%\n%
+	FOR /F %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
+		SET "String=%%!%%J%%! "%\n%
+		FOR %%A IN ^(%\n%
+			"A=a" "B=b" "C=c" "D=d" "E=e" "F=f" "G=g" "H=h" "I=i" "J=j"%\n%
+			"K=k" "L=l" "M=m" "N=n" "O=o" "P=p" "Q=q" "R=r" "S=s" "T=t"%\n%
+			"U=u" "V=v" "W=w" "X=x" "Y=y" "Z=z" "Ö=ö" "Ä=ä" "Ü=ü"%\n%
+		^) DO ^(SET "String=%%!String:%%~A%%!"^)%\n%
+		SET "String=%%!String:~,-1%%!"%\n%
+		IF DEFINED String ^(%\n%
+			IF NOT DEFINED NotDelayed ^(%\n%
+				SET "String=%%!String:^^^=^^^^%%!"%\n%
+				SET "String=%%!String:"=""Q%%!^"%\n%
+				CALL SET "String=%%^^^String:^^^!=""E^^^!%%" %%! %\n%
+				SET "String=%%!String:""E=^^^!"%\n%
+				SET "String=%%!String:""Q="%%!^"%\n%
+			^)%\n%
+			FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
+)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
+	^)%\n%
+) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
+) & SET ^"LF=^%LF%%LF%"
+	REM "
 EXIT /B 0
 
 REM Ideas/TODOs:
