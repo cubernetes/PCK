@@ -534,19 +534,17 @@ SETLOCAL
 	SET "DestFolder=%~2"
 
 	REM untested code
-	rem CALL :GetProgramPath 7z "!BaseDir!\7zip" 7z
-	rem IF "!7z!"=="not found" (
-	rem 	CALL :ColorEcho WARNING def 1 0 "7z was NOT found"
-	rem 	CALL :DownloadDependency 7zip
-	rem )
-	CALL :ProgramWorks "7z"
-	IF NOT "!ERRORLEVEL!"=="0" (
-		CALL :ColorEcho WARNING def 1 0 "7z still not found."
+	CALL :GetProgramPath 7z "!7zDir!" 7z
+	IF "!7z!"=="not found" (
+		CALL :DownloadDependency 7zip
+	)
+	CALL :GetProgramPath 7z "!7zDir!" 7z
+	IF "!7z!"=="not found" (
 		CALL :ColorEcho ACTION def 1 0 "Unzipping !FileName! with VBScript instead:"
 		CALL :UnzipWithVbs "!SrcFile!" "!DestFolder!"
 	) ELSE (
 		CALL :ColorEcho ACTION def 1 0 "Unzipping !FileName! with 7z:"
-		!7z! x -bsp1 -o"!DestFolder!" "!SrcFile!"
+		1>NUL 2>&1 "!7z!" x -bsp1 -o"!DestFolder!" "!SrcFile!"
 	)
 
 	SET "ItemCount=0"
@@ -959,34 +957,14 @@ SETLOCAL
 	SET "PathToExe=%~1"
 	SET "ReturnVar1=%~2"
 
-	CALL :ProgramWorks "7z"
-	IF "!ERRORLEVEL!"=="0" (
-		ECHO 7z DOES exist
-	) ELSE (
+	CALL :GetProgramPath 7z "!7zDir!" 7z
+	IF "!7z!"=="not found" (
 		ECHO 7z does not not exist
+	) ELSE (
+		ECHO 7z DOES exist
 	)
 ENDLOCAL & SET "%ReturnVar1%=ReturnValue"
 EXIT /B 0
-
-REM ------------------------ ProgramWorks ------------------------
-:ProgramWorks
-SETLOCAL
-	SET "FileName=%~1"
-	REM "!ReturnVar1!" MUST NOT be "ERRORLEVEL"
-	SET "ReturnVar1=%~2"
-
-	"!System32!\where.exe" /Q "!FileName!"
-
-	IF "!ERRORLEVEL!"=="9009" (
-		CALL :ColorEcho ERROR def 1 0 "where-utility does not exist. Is your path variable broken?"
-		GOTO :Error
-	)
-	IF "!ERRORLEVEL!"=="0" (
-		ENDLOCAL
-		EXIT /B 0
-	)
-ENDLOCAL
-EXIT /B 1
 
 REM ------------------------ ShowHelp ------------------------
 :ShowHelp
@@ -1147,6 +1125,7 @@ REM ------------------------ Init ------------------------
 
 	SET "RedirectsDir=!BaseDir!\Redirects"
 	SET "TmpDir=!BaseDir!\tmp"
+	SET "7zDir=!BaseDir!\7zip"
 
 	CALL :CreateFolder "!RedirectsDir!"
 	CALL :CreateFolder "!TmpDir!"
