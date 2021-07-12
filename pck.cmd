@@ -228,8 +228,10 @@ SETLOCAL
 			SET "URL=%%~C"
 			SET "URL32bit=%%~D"
 
-			IF NOT EXIST "!BaseDir!\!Name!!RelPath!" (
-
+			IF EXIST "!BaseDir!\!Name!!RelPath!" (
+				CALL :ColorEcho INFO def 1 1 "!Name! is already installed in "!BaseDir!\!Name!". Use it with "!BaseDir!\!Name!!RelPath!"."
+				ENDLOCAL & EXIT /B 2
+			) ELSE (
 				CALL :ColorEcho INFO def 1 1 "Package "!Package!" found!"
 
 				CALL :FollowURL URL LastRedirectURL
@@ -266,15 +268,6 @@ SETLOCAL
 				REM SET /A "CanUse64Bit=a & b"
 
 				SET "_ErrorString=unknown undetermined"
-
-				SET "a=0"
-				SET "b=0"
-				SET "c=0"
-				IF "!Architecture!"=="64" SET "a=1"
-				CALL CALL SET "TmpString=%%%%_ErrorString:%%FileExtension%%=%%%%"
-				CALL CALL SET "TmpString32bit=%%%%_ErrorString:%%FileExtension32bit%%=%%%%"
-				IF "!TmpString!"=="!_ErrorString!" SET "b=1"
-				IF "!TmpString32bit!"=="!_ErrorString!" SET "c=1"
 
 				REM Escaping exclamation points because of DelayedExpansion
 				SET /A "Error=(^!a & ^!c)|(^!b & ^!c)"
@@ -334,9 +327,6 @@ SETLOCAL
 				CALL :CreateShortcutWithVbs "!BaseDir!\!Name!!RelPath!" "!RedirectsDir!\!Name!.lnk"
 
 				ENDLOCAL & EXIT /B 0
-			) ELSE (
-				CALL :ColorEcho INFO def 1 1 "!Name! is already installed in "!BaseDir!\!Name!". Use it with "!BaseDir!\!Name!!RelPath!"."
-				ENDLOCAL & EXIT /B 0
 			)
 		)
 	)
@@ -352,6 +342,15 @@ SETLOCAL
 	IF DEFINED Offline (
 		IF NOT "!Offline!"=="offline" (
 			CALL :ColorEcho WARNING def 1 0 "Ignoring unknown argument `!Offline!`."
+
+				SET "a=0"
+				SET "b=0"
+				SET "c=0"
+				IF "!Architecture!"=="64" SET "a=1"
+				CALL CALL SET "TmpString=%%%%_ErrorString:%%FileExtension%%=%%%%"
+				CALL CALL SET "TmpString32bit=%%%%_ErrorString:%%FileExtension32bit%%=%%%%"
+				IF "!TmpString!"=="!_ErrorString!" SET "b=1"
+				IF "!TmpString32bit!"=="!_ErrorString!" SET "c=1"
 			SET "Offline="
 		)
 	)
@@ -1242,7 +1241,7 @@ SETLOCAL
 		GOTO :Finish
 	)
 
-	CALL :InstallPackage "!Arg2!"
+	CALL :InstallPackage "!Arg1!"
 	IF "!ERRORLEVEL!"=="1" (
 		CALL :ColorEcho ERROR def 1 0 "That package does not exist"
 		GOTO :Error
