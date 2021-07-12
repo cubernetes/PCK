@@ -230,104 +230,113 @@ SETLOCAL
 
 			IF EXIST "!BaseDir!\!Name!!RelPath!" (
 				CALL :ColorEcho INFO def 1 1 "!Name! is already installed in "!BaseDir!\!Name!". Use it with "!BaseDir!\!Name!!RelPath!"."
-				ENDLOCAL & EXIT /B 2
-			) ELSE (
-				CALL :ColorEcho INFO def 1 1 "Package "!Package!" found!"
-
-				CALL :FollowURL URL LastRedirectURL
-				CALL :FollowURL URL32bit LastRedirectURL32bit
-
-				CALL :DetermineFileExtensionOfURL LastRedirectURL FileExtension
-				CALL :DetermineFileExtensionOfURL LastRedirectURL32bit FileExtension32bit
-
-				REM a => Architecture is 64 bit
-				REM b => File type for 64 bit version is not unknown and not undetermined
-				REM c => File type for 32 bit version is not unknown and not undetermined
-				REM
-				REM Truth table:
-				REM a b c Error    Use b instead of c
-				REM 0 0 0     1                     0
-				REM 0 0 1     0                     0
-				REM 0 1 0     1                     0
-				REM 0 1 1     0                     0
-				REM 1 0 0     1                     0
-				REM 1 0 1     0                     0
-				REM 1 1 0     0                     1
-				REM 1 1 1     0                     1
-				REM To get a formular for the Error variable, we can use a disjunctive normal form:
-				REM Error = (¬a ∧ ¬b ∧ ¬c) ∨ (¬a ∧ b ∧ ¬c) ∨ (a ∧ ¬b ∧ ¬c) <=>
-				REM Error = (¬a ∧ ¬c) ∨ (¬b ∧ ¬c)
-				REM With:
-				REM   ∧ = AND
-				REM   ∨ = OR
-				REM   ¬ = NOT
-				REM In batch:
-				REM SET /A "Error=(!a & !b) | (!b & !c)"
-				REM
-				REM Forumular for when to use the 64 bit version:
-				REM SET /A "CanUse64Bit=a & b"
-
-				SET "_ErrorString=unknown undetermined"
-
-				REM Escaping exclamation points because of DelayedExpansion
-				SET /A "Error=(^!a & ^!c)|(^!b & ^!c)"
-
-				IF "!Error!"=="1" (
-					CALL :ColorEcho ERROR def 1 0 "There was no compatible version found for your machine."
-					CMD /C ^""!DifferentCmdLine!" i "!Name!"^"
-					GOTO :Error
-				)
-
-				SET /A "CanUse64Bit=a & b"
-
-				IF "!CanUse64Bit!"=="1" (
-					CALL :ColorEcho ACTION def 1 0 "Getting 64 bit version of "!Package!"."
-					CALL :Download LastRedirectURL "!TmpDir!\!Name!.!FileExtension!"
-					SET "Extension=!FileExtension!"
-				) ELSE (
-					CALL :ColorEcho ACTION def 1 0 "Getting 32 bit version of "!Package!"."
-					CALL :Download LastRedirectURL32bit "!TmpDir!\!Name!.!FileExtension32bit!"
-					SET "Extension=!FileExtension32bit!"
-				)
-
-				CALL :CreateFolder "!BaseDir!\!Name!"
-
-				IF "!Extension!"=="zip" (
-					CALL :Unzip "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="7z" (
-					CALL :Extract7z "!TmpDir!\!Name!.7z" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="exe" (
-					CALL :CheckExeExtractable "!TmpDir!\!Name!.exe" isExtractable
-					IF "!IsExtractable!"=="1" (
-						CALL :ExtractExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
-					) ELSE (
-						CALL :CheckExeInstaller "!TmpDir!\!Name!.exe" isInstaller
-						IF NOT "!IsInstaller!"=="1" (
-							CALL :InstallExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
-						) ELSE (
-							MOVE "!TmpDir!\!Name!.exe" "!BaseDir!\!Name!"
-						)
-					)
-				)
-				IF "!Extension!"=="msi" (
-					CALL :ExtractMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
-					REM Since you can always extract any MSI with windows built-in msiexec-utility, there's no need
-					REM to install any msi. Option to actually install it might be added later
-					REM CALL :InstallMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="bat" (
-					MOVE "!TmpDir!\!Name!.bat" "!BaseDir!\!Name!"
-				)
-				IF "!Extension!"=="ahk" (
-					MOVE "!TmpDir!\!Name!.ahk" "!BaseDir!\!Name!"
-				)
-
-				CALL :CreateShortcutWithVbs "!BaseDir!\!Name!!RelPath!" "!RedirectsDir!\!Name!.lnk"
-
 				ENDLOCAL & EXIT /B 0
 			)
+
+			CALL :ColorEcho INFO def 1 1 "Package "!Package!" found!"
+
+			CALL :FollowURL URL LastRedirectURL
+			CALL :FollowURL URL32bit LastRedirectURL32bit
+
+			CALL :DetermineFileExtensionOfURL LastRedirectURL FileExtension
+			CALL :DetermineFileExtensionOfURL LastRedirectURL32bit FileExtension32bit
+
+			REM a => Architecture is 64 bit
+			REM b => File type for 64 bit version is not unknown and not undetermined
+			REM c => File type for 32 bit version is not unknown and not undetermined
+			REM
+			REM Truth table:
+			REM a b c Error    Use b instead of c
+			REM 0 0 0     1                     0
+			REM 0 0 1     0                     0
+			REM 0 1 0     1                     0
+			REM 0 1 1     0                     0
+			REM 1 0 0     1                     0
+			REM 1 0 1     0                     0
+			REM 1 1 0     0                     1
+			REM 1 1 1     0                     1
+			REM To get a formular for the Error variable, we can use a disjunctive normal form:
+			REM Error = (¬a ∧ ¬b ∧ ¬c) ∨ (¬a ∧ b ∧ ¬c) ∨ (a ∧ ¬b ∧ ¬c) <=>
+			REM Error = (¬a ∧ ¬c) ∨ (¬b ∧ ¬c)
+			REM With:
+			REM   ∧ = AND
+			REM   ∨ = OR
+			REM   ¬ = NOT
+			REM In batch:
+			REM SET /A "Error=(!a & !b) | (!b & !c)"
+			REM
+			REM Forumular for when to use the 64 bit version:
+			REM SET /A "CanUse64Bit=a & b"
+
+			SET "_ErrorString=unknown undetermined"
+
+			SET "a=0"
+			SET "b=0"
+			SET "c=0"
+			IF "!Architecture!"=="64" SET "a=1"
+			CALL CALL SET "TmpString=%%%%_ErrorString:%%FileExtension%%=%%%%"
+			CALL CALL SET "TmpString32bit=%%%%_ErrorString:%%FileExtension32bit%%=%%%%"
+			IF "!TmpString!"=="!_ErrorString!" SET "b=1"
+			IF "!TmpString32bit!"=="!_ErrorString!" SET "c=1"
+
+			REM Escaping exclamation points because of DelayedExpansion
+			SET /A "Error=(^!a & ^!c)|(^!b & ^!c)"
+
+			IF "!Error!"=="1" (
+				CALL :ColorEcho ERROR def 1 0 "There was no compatible version found for your machine."
+				CMD /C ^""!DifferentCmdLine!" i "!Name!"^"
+				GOTO :Error
+			)
+
+			SET /A "CanUse64Bit=a & b"
+
+			IF "!CanUse64Bit!"=="1" (
+				CALL :ColorEcho ACTION def 1 0 "Getting 64 bit version of "!Package!"."
+				CALL :Download LastRedirectURL "!TmpDir!\!Name!.!FileExtension!"
+				SET "Extension=!FileExtension!"
+			) ELSE (
+				CALL :ColorEcho ACTION def 1 0 "Getting 32 bit version of "!Package!"."
+				CALL :Download LastRedirectURL32bit "!TmpDir!\!Name!.!FileExtension32bit!"
+				SET "Extension=!FileExtension32bit!"
+			)
+
+			CALL :CreateFolder "!BaseDir!\!Name!"
+
+			IF "!Extension!"=="zip" (
+				CALL :Unzip "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
+			)
+			IF "!Extension!"=="7z" (
+				CALL :Extract7z "!TmpDir!\!Name!.7z" "!BaseDir!\!Name!"
+			)
+			IF "!Extension!"=="exe" (
+				CALL :CheckExeExtractable "!TmpDir!\!Name!.exe" isExtractable
+				IF "!IsExtractable!"=="1" (
+					CALL :ExtractExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
+				) ELSE (
+					CALL :CheckExeInstaller "!TmpDir!\!Name!.exe" isInstaller
+					IF NOT "!IsInstaller!"=="1" (
+						CALL :InstallExe "!TmpDir!\!Name!.zip" "!BaseDir!\!Name!"
+					) ELSE (
+						MOVE "!TmpDir!\!Name!.exe" "!BaseDir!\!Name!"
+					)
+				)
+			)
+			IF "!Extension!"=="msi" (
+				CALL :ExtractMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
+				REM Since you can always extract any MSI with windows built-in msiexec-utility, there's no need
+				REM to install any msi. Option to actually install it might be added later
+				REM CALL :InstallMsi "!TmpDir!\!Name!.msi" "!BaseDir!\!Name!"
+			)
+			IF "!Extension!"=="bat" (
+				MOVE "!TmpDir!\!Name!.bat" "!BaseDir!\!Name!"
+			)
+			IF "!Extension!"=="ahk" (
+				MOVE "!TmpDir!\!Name!.ahk" "!BaseDir!\!Name!"
+			)
+
+			CALL :CreateShortcutWithVbs "!BaseDir!\!Name!!RelPath!" "!RedirectsDir!\!Name!.lnk"
+
+			ENDLOCAL & EXIT /B 0
 		)
 	)
 ENDLOCAL
@@ -525,11 +534,11 @@ SETLOCAL
 	SET "DestFolder=%~2"
 
 	REM untested code
-	CALL :GetProgramPath 7z "!BaseDir!\7zip" 7z
-	IF "!7z!"=="not found" (
-		CALL :ColorEcho WARNING def 1 0 "7z was NOT found"
-		CALL :DownloadDependency 7zip
-	)
+	rem CALL :GetProgramPath 7z "!BaseDir!\7zip" 7z
+	rem IF "!7z!"=="not found" (
+	rem 	CALL :ColorEcho WARNING def 1 0 "7z was NOT found"
+	rem 	CALL :DownloadDependency 7zip
+	rem )
 	CALL :ProgramWorks "7z"
 	IF NOT "!ERRORLEVEL!"=="0" (
 		CALL :ColorEcho WARNING def 1 0 "7z still not found."
@@ -547,7 +556,7 @@ SETLOCAL
 		CALL :ColorEcho SUCCESS def 1 1 "Successfully unzipped "!SrcFile!" to "!DestFolder!"^!"
 	) ELSE (
 		CALL :ColorEcho ERROR def 1 1 "Could not unzip "!SrcFile!" to "!DestFolder!"."
-		GOTO :Error		
+		GOTO :Error
 	)
 	CALL :RemoveNestedFolderStructure "!DestFolder!" "!DestFolder!"
 ENDLOCAL
@@ -572,7 +581,7 @@ SETLOCAL
 	ECHO Set objShell=Nothing >>"!TmpDir!\Unzip.vbs"
 
 	"!Cscript!" //NOLOGO "!TmpDir!\Unzip.vbs"
-	REM TODO: Catch Unzipping error 
+	REM TODO: Catch Unzipping error
 ENDLOCAL
 EXIT /B 0
 
@@ -652,7 +661,7 @@ REM ------------------------ CreateShortcutWithVbs ------------------------
 SETLOCAL
 	SET "ScrFileOrFolder=%~1"
 	SET "DestShortcutFile=%~2"
-	
+
 	REM Source: https://docs.microsoft.com/de-de/troubleshoot/windows-client/admin-development/create-desktop-shortcut-with-wsh
 	ECHO Dim WshShell: Set WshShell = CreateObject("Wscript.Shell") >"!TmpDir!\CreateShortcut.vbs"
 	ECHO Set oMyShortcut = WshShell.CreateShortcut("!DestShortcutFile!") >>"!TmpDir!\CreateShortcut.vbs"
@@ -1246,7 +1255,6 @@ SETLOCAL
 		CALL :ColorEcho ERROR def 1 0 "That package does not exist"
 		GOTO :Error
 	)
-
 
 	:Finish
 	CALL :Cleanup "%~0"
