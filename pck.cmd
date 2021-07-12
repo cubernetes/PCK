@@ -418,7 +418,7 @@ SETLOCAL
 				CALL :ColorEcho INFO def 1 1 "There was information left out because of the offline argument."
 			)
 
-			IF NOT "!Pkg!"=="all" (
+			IF NOT "!Package!"=="all" (
 				ENDLOCAL
 				EXIT /B 0
 			)
