@@ -5,6 +5,12 @@
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion EnableExtensions
 	CALL :Init "%~1"
+
+	::CALL :ParsePackageConfigFile "!PackagesFilePath!"
+
+	::ENDLOCAL
+	::EXIT /B 0
+
 	CALL :Main "%~0" %*
 ENDLOCAL & SET "PATH=%PATH%" & SET "PATHEXT=%PATHEXT%"
 EXIT /B 0
@@ -526,6 +532,40 @@ SETLOCAL
 ENDLOCAL
 EXIT /B 0
 
+REM ------------------------ Extract7z ------------------------
+:Extract7z
+SETLOCAL
+	SET "SrcFile=%~1"
+	SET "FileName=%~n1"
+	SET "DestFolder=%~2"
+
+	CALL :GetProgramPath 7z "!7zDir!" 7z
+	IF "!7z!"=="not found" (
+		CALL :DownloadDependency 7zip
+	)
+	CALL :GetProgramPath 7z "!7zDir!" 7z
+	IF "!7z!"=="not found" (
+		CALL :ColorEcho ERROR def 1 0 "Could not install dependency 7z to extract 7zip archive."
+		GOTO :Error
+	) ELSE (
+		CALL :ColorEcho ACTION def 1 0 "Unzipping !FileName! with 7z:"
+		1>NUL 2>&1 "!7z!" x -bsp1 -o"!DestFolder!" "!SrcFile!"
+	)
+
+	SET "ItemCount=0"
+	FOR /F %%A IN ('DIR "!DestFolder!" /A /B') DO (1>NUL SET /A "ItemCount+=1")
+
+	IF NOT "!ItemCount!"=="0" (
+		CALL :ColorEcho SUCCESS def 1 1 "Successfully unzipped "!SrcFile!" to "!DestFolder!"^!"
+	) ELSE (
+		CALL :ColorEcho ERROR def 1 1 "Could not unzip "!SrcFile!" to "!DestFolder!"."
+		GOTO :Error
+	)
+	CALL :RemoveNestedFolderStructure "!DestFolder!" "!DestFolder!"
+ENDLOCAL
+EXIT /B 0
+
+
 REM ------------------------ Unzip ------------------------
 :Unzip
 SETLOCAL
@@ -533,7 +573,6 @@ SETLOCAL
 	SET "FileName=%~n1"
 	SET "DestFolder=%~2"
 
-	REM untested code
 	CALL :GetProgramPath 7z "!7zDir!" 7z
 	IF "!7z!"=="not found" (
 		CALL :DownloadDependency 7zip
@@ -993,9 +1032,10 @@ SETLOCAL EnableDelayedExpansion
 	SET "j=0"
 	SET "i=0"
 	FOR /F "EOL=# DELIMS=" %%A IN ('TYPE "!SrcFile!"') DO (
-		SET "Line=%%~A"
+		SET Line=%%~A
 		REM Macros for speed
 		%$Trim% Line
+		%$Trim% Line SingleTab
 		%$Trim% Line SingleQuote
 		IF "!Line!"=="-BEGIN-" (
 			SET "BEGIN=1"
@@ -1026,6 +1066,7 @@ SETLOCAL EnableDelayedExpansion
 							SET "PackageList[!j!][File!FileCounter!][relPath]=%%~B"
 							IF "%%~C"=="d" (
 								IF NOT "%%~nB"=="" (
+									ECHO(
 									SET "PackageList[!j!][File!FileCounter!][name]=%%~nB"
 								) ELSE (
 									CALL CALL :ColorEcho WARNING def 1 0 "Error parsing package "%%%%PackageList[%%j%%][name]%%%%", default identifier used although relative path points to a folder."
@@ -1100,6 +1141,17 @@ REM ------------------------ Init ------------------------
 
 	SET "System32=!SystemRoot!\System32"
 
+	REM Remove trailing backslash "\"
+	REM Source: https://stackoverflow.com/a/60414485/13823467
+	FOR %%A IN ("%~dp0\..") DO (SET "BaseDir=%%~fA")
+	FOR %%A IN ("%~dp0\.") DO (SET "PckDir=%%~fA")
+
+	SET "PackagesFilePath=!PckDir!\packages.csv"
+
+	SET "RedirectsDir=!BaseDir!\Redirects"
+	SET "TmpDir=!BaseDir!\tmp"
+	SET "7zDir=!BaseDir!\7zip"
+
 	REM Source: https://stackoverflow.com/a/59874436
 	REM Create escape character for ANSI escape sequences.
 	REM Only line of code where the part after DO can not be in paranthesis.
@@ -1118,20 +1170,10 @@ REM ------------------------ Init ------------------------
 	CALL :GetProgramPath powershell "!System32!\WindowsPowerShell\v1.0" Powershell
 	1>NUL "!Chcp!" 65001
 
-	REM Remove trailing backslash "\"
-	REM Source: https://stackoverflow.com/a/60414485/13823467
-	FOR %%A IN ("%~dp0\..") DO (SET "BaseDir=%%~fA")
-	FOR %%A IN ("%~dp0\.") DO (SET "PckDir=%%~fA")
-
-	SET "RedirectsDir=!BaseDir!\Redirects"
-	SET "TmpDir=!BaseDir!\tmp"
-	SET "7zDir=!BaseDir!\7zip"
-
 	CALL :CreateFolder "!RedirectsDir!"
 	CALL :CreateFolder "!TmpDir!"
 
-	SET "PackagesFilePath=!PckDir!\packages.csv"
-
+	SET "SingleTab=	"
 	SET SingleQuote="
 	REM "
 	SET "DifferentCmdLine=!PckDir!\.\%~nx0"

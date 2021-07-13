@@ -1,0 +1,496 @@
+-BEGIN-
+bluestacks5
+ direct
+ ""
+ "https://cdn3.bluestacks.com/downloads/windows/arabica/5.0.0.7220/81c4e210c0dbc2ec57dabd1b47043712/BlueStacksMicroInstaller_5.0.0.7220_native.exe"
+ ""
+ "\";d
+-
+
+bluestacks
+ direct
+ ""
+ "https://cloud.bluestacks.com/api/getdownloadnow"
+ ""
+ "\";d
+-
+
+discord
+ direct
+ ""
+ "https://discordapp.com/api/download?platform,in"
+ ""
+ "\discord.exe";d
+-
+
+edge
+ direct
+ ""
+ "https://c2rp.officeapps.live.com/c2r/downloadEdge.aspx?platform,efault&source,dgeStablePage&Channel,table&language,e"
+ ""
+ "\";d
+-
+
+filezilla
+ direct
+ ""
+ "https://download3.portableapps.com/portableapps/FileZillaPortable/FileZillaPortable_3.53.1.paf.exe"
+ ""
+ "\App\filezilla\filezilla.exe";d
+-
+
+filius
+ direct
+ ""
+ "https://www.lernsoftware-filius.de/downloads/p/filius-1.12.0.zip"
+ ""
+ "\Filius.exe";d
+-
+
+firefox
+ direct
+ ""
+ "https://deac-riga.dl.sourceforge.net/project/portableapps/Mozilla%20Firefox%2C%20Portable%20Ed./Mozilla%20Firefox%2C%20Portable%20Edition%2087.0/FirefoxPortable_87.0_German.paf.exe"
+ ""
+ "\";d
+-
+
+git
+ direct
+ ""
+ "https://github.com/git-for-windows/git/releases/download/v2.31.1.windows.1/PortableGit-2.31.1-64-bit.7z.exe"
+ ""
+ "\cmd\git.exe";d
+-
+
+gost
+ direct
+ ""
+ "https://github.com/ginuerzh/gost/releases/download/v2.11.1/gost-windows-amd64-2.11.1.zip"
+ ""
+ "\gost-windows-amd64.exe";d
+-
+
+hfsexplorer
+ direct
+ ""
+ "https://netcologne.dl.sourceforge.net/project/catacombae/HFSExplorer/2021.2.22/hfsexplorer-2021.2.22-bin.zip"
+ ""
+ "\bin\hfsexplorer.exe";d
+-
+
+image
+ direct
+ ""
+ "https://github.com/d2phap/ImageGlass/releases/download/8.2.6.6/ImageGlass_8.2.6.6_x64.zip"
+ ""
+ "\ImageGlass.exe";d
+-
+
+keepass
+ direct
+ ""
+ "https://sourceforge.net/projects/keepass/files/KeePass%202.x/2.48.1/KeePass-2.48.1.zip/download"
+ ""
+ "\KeePass.exe";d
+-
+
+miktex-portable
+ direct
+ ""
+ "https://miktex.org/download/ctan/systems/win32/miktex/p/windows-x64/basic-miktex-21.2-x64.exe"
+ ""
+ "\";d
+-
+
+minecraft
+ direct
+ ""
+ "https://launcher.mojang.com/download/MinecraftInstaller.msi"
+ ""
+ "\MinecraftLauncher.exe";d
+-
+
+mingw
+ direct
+ ""
+ "https://netcologne.dl.sourceforge.net/project/mingw/Installer/mingw-get-p.exe"
+ ""
+ "\";d
+-
+
+netspeedmon
+ direct
+ ""
+ "https://downloads.zdnet.de/wp-content/uploads/2010/04/netspeedmonitor_2_5_4_0_x64_p.zip"
+ ""
+ "\";d
+-
+
+newlatex
+ direct
+ ""
+ "https://cloud.thoummavong.de/nextcloud/index.php/s/7CC6TbHbeyp7NMj/download"
+ ""
+ "\newlatex.cmd";d
+-
+
+nextcloud
+ direct
+ ""
+ "https://github.com/nextcloud/desktop/releases/download/v3.2.0/Nextcloud-3.2.0-x64.msi"
+ ""
+ "\nextcloud.exe";d
+-
+
+nordvpn
+ direct
+ ""
+ "https://downloads.nordcdn.com/apps/windows/10/NordVPN/latest/NordVPNp.exe"
+ ""
+ "\";d
+-
+
+notion
+ direct
+ ""
+ "https://www.notion.so/desktop/windows/download"
+ ""
+ "\";d
+-
+
+obs
+ direct
+ ""
+ "https://cdn-fastly.obsproject.com/downloads/OBS-Studio-26.1.1-Full-x64.zip"
+ ""
+ "\bin\64bit\obs64.exe";d
+-
+
+pandoc
+ direct
+ ""
+ "https://github.com/jgm/pandoc/releases/download/2.13/pandoc-2.13-windows-x86_64.zip"
+ ""
+ "\pandoc.exe";d
+-
+
+perl
+ direct
+ ""
+ "https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-64bit.zip"
+ ""
+ "\perl.exe";d
+-
+
+python36
+ direct
+ ""
+ "https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe"
+ ""
+ "\";d
+-
+
+python37
+ direct
+ ""
+ "https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe"
+ ""
+ "\";d
+-
+
+rufus
+ direct
+ ""
+ "https://altushost-swe.dl.sourceforge.net/project/rufus.mirror/v3.13/rufus-3.13.exe"
+ ""
+ "\rufus.exe";d
+-
+
+screencap
+ direct
+ ""
+ "https://github.com/rdp/screen-capture-recorder-to-video-windows-free/releases/download/v0.12.11/p.Screen.Capturer.Recorder.v0.12.11.exe"
+ ""
+ "\";d
+-
+
+shexview
+ direct
+ ""
+ "https://www.nirsoft.net/utils/shexview-x64.zip"
+ ""
+ "\shexview.exe";d
+-
+
+signal
+ direct
+ ""
+ "https://updates.signal.org/desktop/signal-desktop-win-5.2.1.exe"
+ ""
+ "\";d
+-
+
+slack
+ direct
+ ""
+ "https://downloads.slack-edge.com/releases/windows/4.16.1/prod/x64/Slackp.exe"
+ ""
+ "\";d
+-
+
+steamp
+ direct
+ ""
+ "https://cdn.cloudflare.steamstatic.com/client/installer/Steamp.exe"
+ ""
+ "\";d
+-
+
+subl
+ direct
+ ""
+ "https://download.sublimetext.com/Sublime Text Build 3211 x64.zip"
+ ""
+ "\sublime_text.exe";d
+-
+
+sumatra
+ direct
+ ""
+ "https://www.sumatrapdfreader.org/dl2/SumatraPDF-3.2-64.zip"
+ ""
+ "\SumatraPDF-3.2-64.exe";d
+-
+
+sysinternals
+ direct
+ ""
+ "https://download.sysinternals.com/files/SysinternalsSuite.zip"
+ ""
+ "\";d
+-
+
+teams
+ direct
+ "https://www.microsoft.com/en-ww/microsoft-teams/download-app#desktopAppDownloadregion"
+ "https://teams.microsoft.com/downloads/desktopurl?env=production&plat=windows&download=true&arch=x64"
+ "https://teams.microsoft.com/downloads/desktopurl?env=production&plat=windows&download=true"
+ "\";d
+-
+
+teamviewer
+ direct
+ ""
+ "https://dl.teamviewer.com/download/TeamViewerPortable.zip"
+ ""
+ "\";d
+-
+
+treesize
+ direct
+ ""
+ "https://downloads.jam-software.de/treesize_free/TreeSizeFree-Portable.zip"
+ ""
+ "\TreeSizeFree.exe";d
+-
+
+twitch
+ direct
+ ""
+ "https://desktop.twitchsvc.net/installer/windows/Twitchp.exe"
+ ""
+ "\";d
+-
+
+uscreencap
+ direct
+ ""
+ "https://www.videohelp.com/download-QlTgFFBvsG/UScreenCapturex642018.zip"
+ ""
+ "\";d
+-
+
+virtualbox
+ direct
+ ""
+ "https://download.virtualbox.org/virtualbox/6.1.22/VirtualBox-6.1.22-144080-Win.exe"
+ ""
+ "\";d
+-
+
+virtualcam
+ direct
+ ""
+ "https://obsproject.com/forum/resources/obs-virtualcam.949/download"
+ ""
+ "\";d
+-
+
+vlc
+ direct
+ ""
+ "http://ftp.videolan.org/vlc/3.0.12/win64/vlc-3.0.12-win64.zip"
+ ""
+ "\vlc.exe";d
+-
+
+voicebanana
+ direct
+ ""
+ "https://download.vb-audio.com/Download_CABLE/VoicemeeterProp.exe"
+ ""
+ "\";d
+-
+
+whatsapp
+ direct
+ ""
+ "https://github.com/portapps/whatsapp-portable/releases/download/2.2123.7-30/whatsapp-portable-win64-2.2123.7-30.7z"
+ ""
+ "\App\WhatsApp.exe";d
+-
+
+7zip
+ direct
+ "https://www.7-zip.org/download.html"
+ "https://www.7-zip.org/a/7z1900-x64.msi"
+ "https://www.7-zip.org/a/7z1900.msi"
+ "\7z.exe";d
+-
+
+l7zip
+ direct
+ "http://localhost:8000"
+ "http://localhost:8000/7zip.zip"
+ ""
+ "\7z.exe";d
+-
+
+ahk
+ direct
+ "https://www.autohotkey.com/download/"
+ "https://www.autohotkey.com/download/ahk.zip"
+ "https://www.autohotkey.com/download/ahk.zip"
+ "\AutoHotkeyU64.exe";d
+-
+
+atocc
+ direct
+ "http://www.atocc.de/cgi-bin/atocc/site.cgi?lang=en&site=downform"
+ ""
+ "http://atocc.de/download/atocc/AtoCC.zip"
+ "\";d
+-
+
+audac
+ direct
+ "https://github.com/audacity/audacity/releases/"
+ ""
+ "https://github.com/audacity/audacity/releases/download/Audacity-3.0.2/audacity-win-3.0.2.zip"
+ "\audacity.exe";d
+-
+
+brave
+ direct
+ "https://github.com/portapps/brave-portable/releases/"
+ "https://github.com/portapps/brave-portable/releases/download/1.25.68-74/brave-portable-win64-1.25.68-74.7z"
+ ""
+ "\app\brave.exe";d
+-
+
+burp
+ direct
+ "https://portswigger.net/burp/releases/professional-community-2021-6-2"
+ "https://portswigger.net/burp/releases/download?product=community&version=2021.6.2&type=windowsx64"
+ ""
+ "\BurpSuiteCommunity.exe";d
+-
+
+clownfish
+ direct
+ "https://clownfish-translator.com/voicechanger/download.html"
+ "https://clownfish-translator.com/voicechanger/download/download64f.php?v=147"
+ "https://clownfish-translator.com/voicechanger/download/download32.php?v=147"
+ "\ClownfishVoiceChanger.exe";d
+-
+
+curl
+ direct
+ "https://curl.se/windows/"
+ "https://curl.se/windows/dl-7.77.0_2/curl-7.77.0_2-win64-mingw.zip"
+ "https://curl.se/windows/dl-7.77.0_2/curl-7.77.0_2-win32-mingw.zip"
+ "\";d
+-
+
+devcpp
+ direct
+ "https://sourceforge.net/projects/embarcadero-devcpp/files/v6.3/"
+ ""
+ "https://sourceforge.net/projects/embarcadero-devcpp/files/v6.3/Embarcadero_Dev-Cpp_6.3_TDM-GCC_9.2_Portable.7z/download"
+ "\devcpp.exe";d
+-
+
+edgedeflector
+ direct
+ "https://github.com/da2x/EdgeDeflector/releases"
+ ""
+ "https://github.com/da2x/EdgeDeflector/releases/download/v1.2.0.0/EdgeDeflector_install.exe"
+ "\EdgeDeflector.exe";d
+-
+
+etcher
+ direct
+ "https://github.com/balena-io/etcher/releases"
+ ""
+ "https://github.com/balena-io/etcher/releases/download/v1.5.120/balenaEtcher-Portable-1.5.120.exe?d_id=19f67ac7-b027-405f-b971-25a8aa588a77R"
+ "\etcher.exe";d
+-
+
+ffmpeg
+ direct
+ "https://www.gyan.dev/ffmpeg/builds/#git-section"
+ "https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z"
+ ""
+ "\bin\ffmpeg.exe";d
+-
+
+telegram
+ direct
+ "https://desktop.telegram.org/"
+ "https://telegram.org/dl/desktop/win64_portable"
+ "https://telegram.org/dl/desktop/win_portable"
+ "\Telegram.exe";d
+-
+
+ngrok
+ direct
+ "https://ngrok.com/download"
+ "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip"
+ "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-386.zip"
+ "\ngrok.exe";d
+-
+
+putty
+ direct
+ "https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html"
+ "https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.75-installer.msi"
+ "https://the.earth.li/~sgtatham/putty/latest/w32/putty-0.75-installer.msi"
+ "\";d
+-
+
+wireguard
+ direct
+ "https://download.wireguard.com/windows-client/"
+ "https://download.wireguard.com/windows-client/wireguard-amd64-0.3.16.msi"
+ "https://download.wireguard.com/windows-client/wireguard-x86-0.3.16.msi"
+ "\Wireguard\wireguard.exe";d
+-
+
+winzip
+ direct
+ "https://search.chip.de/?q=winzip&it=1#gsc.tab=0&gsc.q=winzip&gsc.page=1"
+ "https://securedl.cdn.chip.de/downloads/14532718/winzip25-home.exe"
+ "https://securedl.cdn.chip.de/downloads/26512/winzip250-32.msi"
+ "\Program Files 64\WinZip\winzip64.exe";d
+-END-
