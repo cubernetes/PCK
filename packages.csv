@@ -61,4 +61,4 @@ putty;                \;                                        "https://the.ear
 wireguard;            \Wireguard\wireguard.exe;                 "https://download.wireguard.com/windows-client/wireguard-amd64-0.3.16.msi"; "https://download.wireguard.com/windows-client/wireguard-x86-0.3.16.msi"; "https://download.wireguard.com/windows-client/"
 winzip;               \Program Files 64\WinZip\winzip64.exe;    "https://securedl.cdn.chip.de/downloads/14532718/winzip25-home.exe"; "https://securedl.cdn.chip.de/downloads/26512/winzip250-32.msi"; "https://search.chip.de/?q=winzip&it=1#gsc.tab=0&gsc.q=winzip&gsc.page=1"
 subl;                 \sublime_text.exe;                        "https://download.sublimetext.com/sublime_text_build_4107_x64.zip"; ""; ""
-sublmerge;            \sublime_merge.exe;                        "https://download.sublimetext.com/sublime_merge_build_2056_x64.zip"; ""; ""
+merge;            \sublime_merge.exe;                        "https://download.sublimetext.com/sublime_merge_build_2056_x64.zip"; ""; ""
