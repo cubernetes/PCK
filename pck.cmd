@@ -181,7 +181,7 @@ SETLOCAL
 	SET "ReturnVar1=%~2"
 
 	SET "LastRedirectURL="
-	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL curl --silent --location --head -X GET "!URL!" ^| "!Findstr!" "Location: "') DO (SET "LastRedirectURL=%%A")
+	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL curl --silent --location --head -X GET "!URL!" ^| "!Findstr!" /I "Location: "') DO (SET "LastRedirectURL=%%A")
 	IF NOT DEFINED LastRedirectURL SET "LastRedirectURL=!URL!"
 ENDLOCAL & SET "%ReturnVar1%=%LastRedirectURL%"
 EXIT /B 0
@@ -736,7 +736,7 @@ SETLOCAL
 	SET "ReturnVar1=%~2"
 	SET "ReturnVar2=%~3"
 
-	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL "!Curl!" --head --silent --location "!URL!" ^| "!Findstr!" "Content-Length: "') DO (SET "_FileSize_=%%A")
+	FOR /F "TOKENS=2 DELIMS= " %%A IN ('2^>NUL "!Curl!" --head --silent --location "!URL!" ^| "!Findstr!" /I "Content-Length: "') DO (SET "_FileSize_=%%A")
 	>NUL SET /A "_FileSize_=_FileSize_ / 1"
 	>NUL SET /A "_FileSizeMB_=_FileSize_ / 1000000"
 ENDLOCAL & SET "%ReturnVar1%=%_FileSize_%" & SET "%ReturnVar2%=%_FileSizeMB_%"
@@ -1157,7 +1157,6 @@ REM ------------------------ Init ------------------------
 	REM Only line of code where the part after DO can not be in paranthesis.
 	FOR /F "DELIMS=#" %%E IN ('"PROMPT #$E# & FOR %%E IN (1) DO REM"') DO (SET "ESC=%%E")
 
-	CALL :GetProgramPath where "!System32!" Where
 	CALL :GetProgramPath chcp "!System32!" Chcp
 	CALL :GetProgramPath sort "!System32!" Sort
 	CALL :GetProgramPath findstr "!System32!" Findstr
