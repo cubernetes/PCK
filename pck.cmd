@@ -153,8 +153,8 @@ REM Source: https://stackoverflow.com/a/61782349
 	CALL :ColorEcho "" white 1 0 ""
 	CALL :Cleanup "%0"
 	CALL :ColorEcho ACTION def 1 0 "Exiting."
-	IF NOT EXIST "!TEMP!\ExitBatchYes.txt" CALL :BuildYes
-	1>NUL 2>&1 <"!TEMP!\ExitBatchYes.txt" CALL :CtrlC
+	IF NOT EXIST "!TmpDir!\ExitBatchYes.txt" CALL :BuildYes
+	1>NUL 2>&1 <"!TmpDir!\ExitBatchYes.txt" CALL :CtrlC
 
 :CtrlC
 CMD /C EXIT -1073741510
