@@ -227,9 +227,10 @@ SETLOCAL
 	REM --------------------------- Install package ---------------------------
 	FOR /F "TOKENS=1,2,3,4,5 EOL=# DELIMS=; " %%A IN ('TYPE "!PackagesFilePath!" ^| "!Sort!"') DO (
 
-		IF "%%~A"=="!Package!" (
+		SET "Name=%%~A"
+		%$ToLower% Name
+		IF "!Name!"=="!Package!" (
 
-			SET "Name=%%~A"
 			SET "RelPath=%%~B"
 			SET "URL=%%~C"
 			SET "URL32bit=%%~D"
