@@ -62,3 +62,4 @@ merge;                \sublime_merge.exe;                       "https://downloa
 git;                  \cmd\git.exe;                             "https://github.com/git-for-windows/git/releases/download/v2.31.1.windows.1/PortableGit-2.31.1-64-bit.7z.exe"; ""; ""
 discord;              \discord.exe;                             ""; "https://portapps.io/download/discord-portable-win32-0.0.309-8.7z"; ""
 treesize;             \TreeSizeFree.exe;                        "https://downloads.jam-software.de/treesize_free/TreeSizeFree-Portable.zip"; ""; ""
+libreoffice;          \;                                        "https://download.documentfoundation.org/libreoffice/stable/7.1.4/win/x86_64/LibreOffice_7.1.4_Win_x64.msi"; "https://download.documentfoundation.org/libreoffice/stable/7.1.4/win/x86/LibreOffice_7.1.4_Win_x86.msi"; "https://de.libreoffice.org/download/download/?type=win-x86&version=7.1.4&lang=de"

@@ -1200,6 +1200,7 @@ REM ------------------------ Init ------------------------
 	SET "AlnumCharClass=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	CALL :CreateShortcutWithVbs "!BaseDir!" "!RedirectsDir!\spck.lnk"
+	1>NUL SETX spck "!BaseDir!"
 
 	REM Curl is needed for various tasks like fetching information for the packages,
 	REM determining the file sizes or determining the file types/extensions.
