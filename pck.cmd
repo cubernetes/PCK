@@ -235,8 +235,10 @@ SETLOCAL
 			SET "URL=%%~C"
 			SET "URL32bit=%%~D"
 
-			IF EXIST "!BaseDir!\!Name!!RelPath!" (
-				CALL :ColorEcho INFO def 1 1 "!Name! is already installed in "!BaseDir!\!Name!". Use it with "!BaseDir!\!Name!!RelPath!"."
+			SET "RelPath=!RelPath:~1!"
+
+			IF EXIST "!BaseDir!\!Name!\!RelPath!" (
+				CALL :ColorEcho INFO def 1 1 "!Name! is already installed in "!BaseDir!\!Name!". Use it with "!BaseDir!\!Name!\!RelPath!"."
 				ENDLOCAL & EXIT /B 0
 			)
 
@@ -341,7 +343,14 @@ SETLOCAL
 				MOVE "!TmpDir!\!Name!.ahk" "!BaseDir!\!Name!"
 			)
 
-			CALL :CreateShortcutWithVbs "!BaseDir!\!Name!!RelPath!" "!RedirectsDir!\!Name!.lnk"
+			FOR /F "DELIMS=" %%A IN ("!RelPath!") DO (SET "File=%%~nxA")
+			IF DEFINED File (
+				CALL CALL SET "RelPathDir=%%%%RelPath:%%File%%=%%%%"
+			) ELSE (
+				SET "RelPathDir=!RelPath!"
+			)
+
+			CALL :CreateShortcutWithVbs "!BaseDir!\!Name!\!RelPath!" "!BaseDir!\!Name!\!RelPathDir!" "!RedirectsDir!\!Name!.lnk"
 
 			ENDLOCAL & EXIT /B 0
 		)
@@ -698,13 +707,15 @@ REM ------------------------ CreateShortcutWithVbs ------------------------
 :CreateShortcutWithVbs
 SETLOCAL
 	SET "ScrFileOrFolder=%~1"
-	SET "DestShortcutFile=%~2"
+	SET "WorkingDirectory=%~2"
+	SET "DestShortcutFile=%~3"
 
 	REM Source: https://docs.microsoft.com/de-de/troubleshoot/windows-client/admin-development/create-desktop-shortcut-with-wsh
 	ECHO Dim WshShell: Set WshShell = CreateObject("Wscript.Shell") >"!TmpDir!\CreateShortcut.vbs"
 	ECHO Set oMyShortcut = WshShell.CreateShortcut("!DestShortcutFile!") >>"!TmpDir!\CreateShortcut.vbs"
 	ECHO oMyShortcut.WindowStyle = 4 >>"!TmpDir!\CreateShortcut.vbs"
 	ECHO OMyShortcut.TargetPath = "!ScrFileOrFolder!" >>"!TmpDir!\CreateShortcut.vbs"
+	ECHO OMyShortcut.WorkingDirectory = "!WorkingDirectory!" >>"!TmpDir!\CreateShortcut.vbs"
 	ECHO oMyShortCut.Save >>"!TmpDir!\CreateShortcut.vbs"
 	ECHO Set oMyShortCut = Nothing >>"!TmpDir!\CreateShortcut.vbs"
 	ECHO Set WshShell = Nothing >>"!TmpDir!\CreateShortcut.vbs"
@@ -1164,7 +1175,8 @@ REM ------------------------ Init ------------------------
 	CALL :GetProgramPath cscript "!System32!" Cscript
 	CALL :GetProgramPath replace "!System32!" Replace
 
-	FOR /F "TOKENS=3 DELIMS=. " %%A IN ('^""!Chcp!"^"') DO (SET "OldCodePage=%%A")
+
+	FOR /F "TOKENS=2 DELIMS=:." %%A IN ('^""!Chcp!"^"') DO (SET "OldCodePage=%%A")
 
 	1>NUL "!Chcp!" 1252
 	CALL :GetProgramPath powershell "!System32!\WindowsPowerShell\v1.0" Powershell
@@ -1200,7 +1212,7 @@ REM ------------------------ Init ------------------------
 	REM For regex
 	SET "AlnumCharClass=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	CALL :CreateShortcutWithVbs "!BaseDir!" "!RedirectsDir!\spck.lnk"
+	CALL :CreateShortcutWithVbs "!BaseDir!" "!BaseDir!" "!RedirectsDir!\spck.lnk"
 	1>NUL SETX spck "!BaseDir!"
 
 	REM Curl is needed for various tasks like fetching information for the packages,
@@ -1319,7 +1331,7 @@ ENDLOCAL & FOR /F %%! IN ("! ! ^^^!") DO (REM "
 					SET "Line=%%!Line:""Q="%%!^"%\n%
 				^)%\n%
 				FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ TOKENS^^^^=^^^^1*^^^^ DELIMS^^^^=\^^^^^" %%k IN ^("%%!i%%!\%%!Line%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J[%%~k]=%%~l"%%!%\n%
-)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J[%%!i%%!]="%\n%
+) ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J[%%!i%%!]="%\n%
 SET /A "i+=1"%\n%
 SETLOCAL^&SETLOCAL EnableDelayedExpansion^)%\n%
 ENDLOCAL^&ENDLOCAL^&SET "%%J[len]=%%!i%%!"^)%\n%
@@ -1353,7 +1365,7 @@ REM "
 				SET "String=%%!String:""Q="%%!^"%\n%
 			^)%\n%
 			FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
-)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
+) ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
 	^)%\n%
 ) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
 REM "
@@ -1361,7 +1373,6 @@ REM "
 	REM ----------------------- ToLower Macro -------------------------
 	REM Source: https://www.dostips.com/forum/viewtopic.php?p=8697#p8697
 	SET $ToLower=FOR %%I IN ^(1 2^) DO IF %%I==2 ^(%\n%
-	SET "TrimChar= "%\n%
 	FOR /F %%J IN ^("%%!MacroArgs%%!"^) DO ^(%\n%
 		SET "String=%%!%%J%%! "%\n%
 		FOR %%A IN ^(%\n%
@@ -1379,7 +1390,7 @@ REM "
 				SET "String=%%!String:""Q="%%!^"%\n%
 			^)%\n%
 			FOR /F ^^^^^"EOL^^^^^=^^^^^%LF%%LF%^%LF%%LF%^^^^ DELIMS^^^^=^^^^^" %%k IN ^("%%!String%%!"^) DO ENDLOCAL^&ENDLOCAL^&SET "%%J=%%k"%%!%\n%
-)	ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
+) ELSE ENDLOCAL^&ENDLOCAL^&SET "%%J="%\n%
 	^)%\n%
 ) ELSE SETLOCAL^&SET "NotDelayed=%%!"^&SETLOCAL EnableDelayedExpansion^&SET MacroArgs=
 ) & SET ^"LF=^%LF%%LF%"
