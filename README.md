@@ -1,5 +1,5 @@
 # PCK Package Manager
-Simple, easy to use, stand-alone, "suckless" package manager for windows.
+Simple, easy to use, stand-alone package manager for windows.
 
 # Usage
 - `pck package`         # install a package
